@@ -1,8 +1,16 @@
 <?php
+namespace WordPressdotorg\Theme_Directory\Rest_API;
+use WP_REST_Server;
+use WP_Error;
+use WP_Http;
 
-class WPorg_Themes_Rest_API_Internal_Stats {
+class Internal_Stats {
 
 	function __construct() {
+		add_action( 'rest_api_init', [ $this, 'register_routes' ] );
+	}
+
+	function register_routes() {
 		register_rest_route( 'themes/v1', '/update-stats', array(
 			'methods'  => \WP_REST_Server::CREATABLE,
 			'callback' => array( $this, 'bulk_update_stats' ),
@@ -25,7 +33,7 @@ class WPorg_Themes_Rest_API_Internal_Stats {
 			! defined( 'THEME_API_INTERNAL_BEARER_TOKEN' ) ||
 			! hash_equals( THEME_API_INTERNAL_BEARER_TOKEN, $authorization_header )
 		) {
-			return new \WP_Error(
+			return new WP_Error(
 				'not_authorized',
 				__( 'Sorry! You cannot do that.', 'wporg-themes' ),
 				array( 'status' => \WP_Http::UNAUTHORIZED )
@@ -113,4 +121,4 @@ class WPorg_Themes_Rest_API_Internal_Stats {
 	}
 
 }
-new WPorg_Themes_Rest_API_Internal_Stats();
+new Internal_Stats();

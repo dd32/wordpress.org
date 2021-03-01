@@ -174,10 +174,8 @@ add_action( 'init', 'wporg_themes_init' );
 /**
  * Loads the Rest API Endpoints.
  */
-function wporg_themes_rest_apis() {
-	include __DIR__ . '/class-wporg-themes-rest-api-internal-stats.php';
-}
-add_action( 'rest_api_init', 'wporg_themes_rest_apis' );
+require __DIR__ . '/class-wporg-themes-rest-api-internal-stats.php';
+require __DIR__ . '/class-wporg-themes-rest-api-info-endpoint.php';
 
 /**
  * Filter the permalink for the Packages to be /post_name/
