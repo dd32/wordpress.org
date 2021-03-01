@@ -39,17 +39,17 @@ class Info_Endpoint {
 		/*
 		 * These map from api.wordpress.org/themes/info/$version/ to wp-json/themes/$version/info
 		 */
-		register_rest_route( 'themes/v1.0', '/info', array(
+		register_rest_route( 'themes/1.0', '/info', array(
 			'callback' => array( $this, 'info_10' ),
 			'permission_callback' => '__return_true',
 		) );
 
-		register_rest_route( 'themes/v1.1', '/info', array(
+		register_rest_route( 'themes/1.1', '/info', array(
 			'callback' => array( $this, 'info_11' ),
 			'permission_callback' => '__return_true',
 		) );
 
-		register_rest_route( 'themes/v1.2', '/info', array(
+		register_rest_route( 'themes/1.2', '/info', array(
 			'callback' => array( $this, 'info_12' ),
 			'permission_callback' => '__return_true',
 		) );
