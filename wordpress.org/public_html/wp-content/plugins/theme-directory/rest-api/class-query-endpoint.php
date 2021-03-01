@@ -37,19 +37,19 @@ class Query_Endpoint {
 
 	function register_routes() {
 		/*
-		 * These map from api.wordpress.org/themes/info/$version/ to wp-json/themes/$version/info
+		 * These map from api.wordpress.org/themes/info/$version/ to wp-json/themes/$version/query
 		 */
-		register_rest_route( 'themes/1.0', '/query', array(
+		register_rest_route( 'themes/1.0', 'query', array(
 			'callback' => array( $this, 'query_10' ),
 			'permission_callback' => '__return_true',
 		) );
 
-		register_rest_route( 'themes/1.1', '/query', array(
+		register_rest_route( 'themes/1.1', 'query', array(
 			'callback' => array( $this, 'query_11' ),
 			'permission_callback' => '__return_true',
 		) );
 
-		register_rest_route( 'themes/1.2', '/query', array(
+		register_rest_route( 'themes/1.2', 'query', array(
 			'callback' => array( $this, 'query_12' ),
 			'permission_callback' => '__return_true',
 		) );
