@@ -37,6 +37,7 @@ include __DIR__ . '/lib/class-github.php';
 // Load the Rest API Endpoints.
 require __DIR__ . '/rest-api/class-internal-stats.php';
 require __DIR__ . '/rest-api/class-info-endpoint.php';
+require __DIR__ . '/rest-api/class-query-endpoint.php';
 
 define( 'WPORG_THEMES_DEFAULT_BROWSE', 'popular' );
 
