@@ -116,8 +116,8 @@ function wporg_themes_scripts() {
 		$title_suffix = isset( $GLOBALS['wporg_global_header_options']['rosetta_title'] ) ? $GLOBALS['wporg_global_header_options']['rosetta_title'] : 'WordPress.org';
 
 		$api_endpoints = [
-			'query'     => 'https://api.wordpress.org/themes/info/1.2/',
-			'favourite' => 'https://api.wordpress.org/themes/theme-directory/1.0/',
+			'query'    => 'https://api.wordpress.org/themes/info/1.2/',
+			'favorite' => 'https://api.wordpress.org/themes/theme-directory/1.0/',
 		];
 		if ( 'local' === wp_get_environment_type() ) {
 			$api_endpoints['query'] = rest_url( 'themes/1.2/query' );
