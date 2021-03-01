@@ -355,9 +355,9 @@ window.wp = window.wp || {};
 				}
 			}, request);
 
-			var url = themes.data.settings.apiEndpoints.query;
+			var url = themes.data.settings.apiEndpoint;
 
-			// Requets against WordPress.org need to be nested.
+			// Requets against api.WordPress.org need to be nested.
 			if ( 'api.wordpress.org' === ( new URL(url) ).hostname ) {
 				data = {
 					action: 'query_themes',
@@ -569,7 +569,7 @@ window.wp = window.wp || {};
 			// Update the server with the changed data
 			var options = {
 				type: 'GET',
-				url: 'https://api.wordpress.org/themes/theme-directory/1.0/',
+				url: themes.data.settings.favorites.api,
 				jsonp: 'callback',
 				dataType: 'jsonp',
 				data: {
