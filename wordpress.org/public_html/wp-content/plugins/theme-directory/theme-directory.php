@@ -34,6 +34,10 @@ new WordPressdotorg\Theme_Directory\Jobs\Manager();
 // Load the GitHub API client.
 include __DIR__ . '/lib/class-github.php';
 
+// Load the Rest API Endpoints.
+require __DIR__ . '/rest-api/class-internal-stats.php';
+require __DIR__ . '/rest-api/class-info-endpoint.php';
+
 define( 'WPORG_THEMES_DEFAULT_BROWSE', 'popular' );
 
 define( 'WPORG_THEMES_E2E_REPO', 'WordPress/theme-review-e2e' );
@@ -170,12 +174,6 @@ function wporg_themes_init() {
 	}
 }
 add_action( 'init', 'wporg_themes_init' );
-
-/**
- * Loads the Rest API Endpoints.
- */
-require __DIR__ . '/class-wporg-themes-rest-api-internal-stats.php';
-require __DIR__ . '/class-wporg-themes-rest-api-info-endpoint.php';
 
 /**
  * Filter the permalink for the Packages to be /post_name/
