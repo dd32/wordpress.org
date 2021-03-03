@@ -9,20 +9,15 @@ class Info_Endpoint {
 		/*
 		 * These map from api.wordpress.org/themes/info/$version/ to wp-json/themes/$version/info
 		 */
-		register_rest_route( 'themes/1.0', '/info', array(
-			'callback' => array( $this, 'info_10' ),
-			'permission_callback' => '__return_true',
-		) );
 
-		register_rest_route( 'themes/1.1', '/info', array(
-			'callback' => array( $this, 'info_11' ),
+		$args = array(
+			'callback' => array( $this, 'info' ),
 			'permission_callback' => '__return_true',
-		) );
+		);
 
-		register_rest_route( 'themes/1.2', '/info', array(
-			'callback' => array( $this, 'info_12' ),
-			'permission_callback' => '__return_true',
-		) );
+		register_rest_route( 'themes/1.0', '/info', $args );
+		register_rest_route( 'themes/1.1', '/info', $args );
+		register_rest_route( 'themes/1.2', '/info', $args );
 	}
 
 	/**
@@ -31,15 +26,7 @@ class Info_Endpoint {
 	 * @param \WP_REST_Request $request The Rest API Request.
 	 * @return bool true
 	 */
-	function info_12( $request ) {
-		define( 'THEMES_API_VERSION', '1.2' );
-	
-		return $this->info_11( $request );
-	}
-
-	function info_11( $request ) {
-		defined( 'THEMES_API_VERSION' ) || define( 'THEMES_API_VERSION', '1.1' );
-
+	function info( $request ) {
 		$api = wporg_themes_query_api(
 			'theme_information',
 			$request->get_params(),
@@ -53,20 +40,6 @@ class Info_Endpoint {
 		}
 
 		return $response;
-	}
-
-	function info_10( $request ) {
-		define( 'THEMES_API_VERSION', '1.0' );
-
-		$api = wporg_themes_query_api(
-			'theme_information',
-			$request->get_params(),
-			'api_object'
-		);
-
-		// PHP output.
-		echo $api->get_result( 'php' );
-		exit;
 	}
 
 }

@@ -25,6 +25,15 @@ function enable_jsonp_support() {
 }
 add_action( 'parse_request', 'enable_jsonp_support', 9 );
 
+// Define the 'THEMES_API_VERSION' constant for API requests.
+add_action( 'rest_api_init', function() {
+	global $wp;
+
+	if ( preg_match( '!^/themes/(\d\.\d)/!', $wp->query_vars['rest_route'], $m ) ) {
+		define( 'THEMES_API_VERSION', $m[1] );
+	}
+} );
+
 // Include the REST API Endpoints at the appropriate time.
 add_action( 'rest_api_init', function() {
 	require __DIR__ . '/rest-api/class-internal-stats.php';

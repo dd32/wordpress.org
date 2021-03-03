@@ -9,20 +9,15 @@ class Query_Endpoint {
 		/*
 		 * These map from api.wordpress.org/themes/info/$version/ to wp-json/themes/$version/query
 		 */
-		register_rest_route( 'themes/1.0', 'query', array(
-			'callback' => array( $this, 'query_10' ),
-			'permission_callback' => '__return_true',
-		) );
 
-		register_rest_route( 'themes/1.1', 'query', array(
-			'callback' => array( $this, 'query_11' ),
+		$args = array(
+			'callback' => array( $this, 'query' ),
 			'permission_callback' => '__return_true',
-		) );
+		);
 
-		register_rest_route( 'themes/1.2', 'query', array(
-			'callback' => array( $this, 'query_12' ),
-			'permission_callback' => '__return_true',
-		) );
+		register_rest_route( 'themes/1.0', 'query', $args );
+		register_rest_route( 'themes/1.1', 'query', $args );
+		register_rest_route( 'themes/1.2', 'query', $args );
 	}
 
 	/**
@@ -31,15 +26,7 @@ class Query_Endpoint {
 	 * @param \WP_REST_Request $request The Rest API Request.
 	 * @return bool true
 	 */
-	function query_12( $request ) {
-		define( 'THEMES_API_VERSION', '1.2' );
-	
-		return $this->query_11( $request );
-	}
-
-	function query_11( $request ) {
-		defined( 'THEMES_API_VERSION' ) || define( 'THEMES_API_VERSION', '1.1' );
-
+	function query( $request ) {
 		$api = wporg_themes_query_api(
 			'query_themes',
 			$request->get_params(),
@@ -53,20 +40,6 @@ class Query_Endpoint {
 		}
 
 		return $response;
-	}
-
-	function query_10( $request ) {
-		define( 'THEMES_API_VERSION', '1.0' );
-
-		$api = wporg_themes_query_api(
-			'query_themes',
-			$request->get_params(),
-			'api_object'
-		);
-
-		// PHP output.
-		echo $api->get_result( 'php' );
-		exit;
 	}
 
 }
