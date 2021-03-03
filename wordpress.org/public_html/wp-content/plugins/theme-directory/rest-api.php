@@ -34,6 +34,19 @@ add_action( 'rest_api_init', function() {
 	}
 } );
 
+// The /themes/1.0/* endpoints are Serialized PHP output when requested directly.
+// Doesn't affect internal calls.
+add_filter( 'rest_pre_echo_response', function( $result ) {
+	global $wp;
+
+	if ( defined( 'THEMES_API_VERSION' ) && '1.0' === THEMES_API_VERSION ) {
+		echo serialize( $result );
+		exit;
+	}
+
+	return $result;
+} );
+
 // Include the REST API Endpoints at the appropriate time.
 add_action( 'rest_api_init', function() {
 	require __DIR__ . '/rest-api/class-internal-stats.php';
