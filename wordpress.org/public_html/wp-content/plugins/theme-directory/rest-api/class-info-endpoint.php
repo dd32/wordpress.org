@@ -32,6 +32,8 @@ class Info_Endpoint {
 
 		if ( ! empty( $api->bad_input ) ) {
 			$response->set_status( 400 );
+		} elseif ( ! empty( $api->error ) && 'Theme not found' === $api->error ) {
+			$response->set_status( 404 );
 		}
 
 		return $response;
