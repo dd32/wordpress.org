@@ -4,12 +4,8 @@ namespace WordPressdotorg\Theme_Directory\Rest_API;
 class Commercial_Shops_Endpoint {
 
 	function __construct() {
-		/*
-		 * These map from api.wordpress.org/themes/info/$version/ to wp-json/themes/$version/info
-		 */
-
 		$args = array(
-			'callback' => array( $this, 'shops' ),
+			'callback'            => array( $this, 'shops' ),
 			'permission_callback' => '__return_true',
 		);
 
@@ -19,10 +15,9 @@ class Commercial_Shops_Endpoint {
 	}
 
 	/**
-	 * Endpoint to handle feature_list API calls.
+	 * Endpoint to handle get_commercial_shops API calls.
 	 *
 	 * @param \WP_REST_Request $request The Rest API Request.
-	 * @return bool true
 	 */
 	function shops( $request ) {
 		$api = wporg_themes_query_api(

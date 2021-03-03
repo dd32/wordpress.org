@@ -6,12 +6,8 @@ use WP_REST_Response;
 class Features_Endpoint {
 
 	function __construct() {
-		/*
-		 * These map from api.wordpress.org/themes/info/$version/ to wp-json/themes/$version/info
-		 */
-
 		$args = array(
-			'callback' => array( $this, 'features' ),
+			'callback'            => array( $this, 'features' ),
 			'permission_callback' => '__return_true',
 		);
 
@@ -24,7 +20,6 @@ class Features_Endpoint {
 	 * Endpoint to handle feature_list API calls.
 	 *
 	 * @param \WP_REST_Request $request The Rest API Request.
-	 * @return bool true
 	 */
 	function features( $request ) {
 		$api = wporg_themes_query_api(

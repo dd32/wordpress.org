@@ -7,9 +7,9 @@ use WP_Http;
 class Internal_Stats {
 
 	function __construct() {
-		register_rest_route( 'themes/v1', '/update-stats', array(
-			'methods'  => \WP_REST_Server::CREATABLE,
-			'callback' => array( $this, 'bulk_update_stats' ),
+		register_rest_route( 'themes/v1', 'update-stats', array(
+			'methods'             => \WP_REST_Server::CREATABLE,
+			'callback'            => array( $this, 'bulk_update_stats' ),
 			'permission_callback' => array( $this, 'permission_check_internal_api_bearer' ),
 		) );
 	}

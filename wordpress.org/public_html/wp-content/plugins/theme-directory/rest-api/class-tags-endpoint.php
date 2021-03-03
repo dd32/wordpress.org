@@ -5,7 +5,7 @@ class Tags_Endpoint {
 
 	function __construct() {
 		$args = array(
-			'callback' => array( $this, 'tags' ),
+			'callback'            => array( $this, 'tags' ),
 			'permission_callback' => '__return_true',
 		);
 
@@ -15,10 +15,9 @@ class Tags_Endpoint {
 	}
 
 	/**
-	 * Endpoint to handle feature_list API calls.
+	 * Endpoint to handle tags API calls.
 	 *
 	 * @param \WP_REST_Request $request The Rest API Request.
-	 * @return bool true
 	 */
 	function tags( $request ) {
 		$api = wporg_themes_query_api(

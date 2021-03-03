@@ -6,12 +6,8 @@ use WP_REST_Response;
 class Info_Endpoint {
 
 	function __construct() {
-		/*
-		 * These map from api.wordpress.org/themes/info/$version/ to wp-json/themes/$version/info
-		 */
-
 		$args = array(
-			'callback' => array( $this, 'info' ),
+			'callback'            => array( $this, 'info' ),
 			'permission_callback' => '__return_true',
 		);
 
@@ -24,7 +20,6 @@ class Info_Endpoint {
 	 * Endpoint to handle theme_information API calls.
 	 *
 	 * @param \WP_REST_Request $request The Rest API Request.
-	 * @return bool true
 	 */
 	function info( $request ) {
 		$api = wporg_themes_query_api(

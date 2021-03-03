@@ -7,7 +7,7 @@ class Query_Endpoint {
 
 	function __construct() {
 		$args = array(
-			'callback' => array( $this, 'query' ),
+			'callback'            => array( $this, 'query' ),
 			'permission_callback' => '__return_true',
 		);
 
@@ -20,7 +20,6 @@ class Query_Endpoint {
 	 * Endpoint to handle query API calls.
 	 *
 	 * @param \WP_REST_Request $request The Rest API Request.
-	 * @return bool true
 	 */
 	function query( $request ) {
 		$api = wporg_themes_query_api(
