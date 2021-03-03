@@ -46,10 +46,10 @@ add_filter( 'rest_pre_echo_response', function( $result ) {
 
 // Include the REST API Endpoints at the appropriate time.
 add_action( 'rest_api_init', function() {
-	require __DIR__ . '/rest-api/class-internal-stats.php';
-	require __DIR__ . '/rest-api/class-info-endpoint.php';
-	require __DIR__ . '/rest-api/class-query-endpoint.php';
-	require __DIR__ . '/rest-api/class-commercial-shops-endpoint.php';
-	require __DIR__ . '/rest-api/class-features-endpoint.php';
-	require __DIR__ . '/rest-api/class-tags-endpoint.php';
+	include __DIR__ . '/rest-api/class-internal-stats.php';
+	include __DIR__ . '/rest-api/class-info-endpoint.php';
+	include __DIR__ . '/rest-api/class-query-endpoint.php';
+	include __DIR__ . '/rest-api/class-commercial-shops-endpoint.php';
+	include __DIR__ . '/rest-api/class-features-endpoint.php';
+	include __DIR__ . '/rest-api/class-tags-endpoint.php';
 } );

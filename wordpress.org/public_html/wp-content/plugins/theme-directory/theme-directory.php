@@ -35,7 +35,7 @@ new WordPressdotorg\Theme_Directory\Jobs\Manager();
 include __DIR__ . '/lib/class-github.php';
 
 // Load the Rest API Endpoints.
-require __DIR__ . '/rest-api.php';
+include __DIR__ . '/rest-api.php';
 
 define( 'WPORG_THEMES_DEFAULT_BROWSE', 'popular' );
 
