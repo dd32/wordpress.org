@@ -330,7 +330,10 @@ window.wp = window.wp || {};
 
 		// Send request to api.wordpress.org/themes
 		apiCall: function( request, paginated ) {
-			var data = _.extend({
+			var url = themes.data.settings.apiEndpoint,
+				data, options;
+
+			data = _.extend({
 				per_page: themes.data.settings.postsPerPage,
 				locale: themes.data.settings.locale,
 				fields: {
@@ -355,8 +358,6 @@ window.wp = window.wp || {};
 				}
 			}, request);
 
-			var url = themes.data.settings.apiEndpoint;
-
 			// Requests against api.WordPress.org need to be nested.
 			if ( 'api.wordpress.org' === ( new URL(url) ).hostname ) {
 				data = {
@@ -366,7 +367,7 @@ window.wp = window.wp || {};
 				};
 			}
 
-			var options = {
+			options = {
 				type: 'GET',
 				url: url,
 				jsonp: 'callback',
