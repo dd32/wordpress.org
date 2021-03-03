@@ -357,7 +357,7 @@ window.wp = window.wp || {};
 
 			var url = themes.data.settings.apiEndpoint;
 
-			// Requets against api.WordPress.org need to be nested.
+			// Requests against api.WordPress.org need to be nested.
 			if ( 'api.wordpress.org' === ( new URL(url) ).hostname ) {
 				data = {
 					action: 'query_themes',
