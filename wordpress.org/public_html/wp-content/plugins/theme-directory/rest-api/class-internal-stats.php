@@ -7,10 +7,6 @@ use WP_Http;
 class Internal_Stats {
 
 	function __construct() {
-		add_action( 'rest_api_init', [ $this, 'register_routes' ] );
-	}
-
-	function register_routes() {
 		register_rest_route( 'themes/v1', '/update-stats', array(
 			'methods'  => \WP_REST_Server::CREATABLE,
 			'callback' => array( $this, 'bulk_update_stats' ),
