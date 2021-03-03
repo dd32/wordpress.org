@@ -8,9 +8,7 @@ namespace WordPressdotorg\Theme_Directory\Rest_API;
  * 
  * This maps the parameter this API uses ?callback= to the REST API parameter.
  */
-function enable_jsonp_support() {
-	global $wp;
-
+add_action( 'parse_request', function( $wp ) {
 	if (
 		! isset( $_GET['callback'] ) ||
 		empty( $wp->query_vars['rest_route'] ) ||
@@ -22,8 +20,7 @@ function enable_jsonp_support() {
 	$_GET['_jsonp'] = $_GET['callback'];
 
 	unset( $_GET['callback'], $_REQUEST['callback'] );
-}
-add_action( 'parse_request', 'enable_jsonp_support', 9 );
+}, 9 );
 
 // Define the 'THEMES_API_VERSION' constant for API requests.
 add_action( 'rest_api_init', function() {
