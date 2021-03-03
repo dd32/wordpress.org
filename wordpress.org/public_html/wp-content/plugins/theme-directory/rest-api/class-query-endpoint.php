@@ -6,10 +6,6 @@ use WP_REST_Response;
 class Query_Endpoint {
 
 	function __construct() {
-		/*
-		 * These map from api.wordpress.org/themes/info/$version/ to wp-json/themes/$version/query
-		 */
-
 		$args = array(
 			'callback' => array( $this, 'query' ),
 			'permission_callback' => '__return_true',

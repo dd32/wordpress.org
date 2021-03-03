@@ -52,4 +52,7 @@ add_action( 'rest_api_init', function() {
 	require __DIR__ . '/rest-api/class-internal-stats.php';
 	require __DIR__ . '/rest-api/class-info-endpoint.php';
 	require __DIR__ . '/rest-api/class-query-endpoint.php';
+	require __DIR__ . '/rest-api/class-commercial-shops-endpoint.php';
+	require __DIR__ . '/rest-api/class-features-endpoint.php';
+	require __DIR__ . '/rest-api/class-tags-endpoint.php';
 } );
