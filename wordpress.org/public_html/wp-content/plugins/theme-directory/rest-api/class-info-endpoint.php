@@ -11,9 +11,9 @@ class Info_Endpoint {
 			'permission_callback' => '__return_true',
 		);
 
-		register_rest_route( 'themes/1.0', 'info', $args );
-		register_rest_route( 'themes/1.1', 'info', $args );
-		register_rest_route( 'themes/1.2', 'info', $args );
+		register_rest_route( 'themes/1.0', 'info(/(?P<slug>[^/]+))?', $args );
+		register_rest_route( 'themes/1.1', 'info(/(?P<slug>[^/]+))?', $args );
+		register_rest_route( 'themes/1.2', 'info(/(?P<slug>[^/]+))?', $args );
 	}
 
 	/**
