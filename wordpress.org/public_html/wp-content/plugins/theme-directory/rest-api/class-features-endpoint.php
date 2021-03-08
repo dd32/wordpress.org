@@ -15,7 +15,10 @@ class Features_Endpoint {
 					'validate_callback' => function( $param ) {
 						return preg_match( '!^\d\.\d!', $param );
 					}
-				]
+				],
+				'locale'     => [
+					'default' => 'en_US',
+				],
 			]
 		);
 
@@ -31,6 +34,11 @@ class Features_Endpoint {
 	 */
 	function features( $request ) {
 		$wp_version = $request['wp_version'];
+
+		// Switch to the locale.
+		if ( $request['locale'] && 'en_US' !== $request['locale'] ) {
+			switch_to_locale( $request['locale'] );
+		}
 
 		// Get version from user agent since it's not explicitly sent to feature_list requests in older API branches.
 		if (
