@@ -26,7 +26,11 @@ add_action( 'parse_request', function( $wp ) {
 add_action( 'rest_api_init', function() {
 	global $wp;
 
-	if ( preg_match( '!^/themes/(\d\.\d)/!', $wp->query_vars['rest_route'], $m ) ) {
+	if (
+		! defined( 'THEMES_API_VERSION' ) &&
+		isset( $wp->query_vars['rest_route'] ) &&
+		preg_match( '!^/themes/(\d\.\d)/!', $wp->query_vars['rest_route'], $m )
+	) {
 		define( 'THEMES_API_VERSION', $m[1] );
 	}
 } );
