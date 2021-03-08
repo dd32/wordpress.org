@@ -209,7 +209,7 @@ class Themes_API {
 
 		$request = new WP_REST_Request( 'GET', '/themes/1.0/tags' );
 		$request->set_query_params( [
-			'number' => $this->request->number ?? ''
+			'number' => $this->request->number ?? 0,
 		] );
 
 		$response = rest_do_request( $request );

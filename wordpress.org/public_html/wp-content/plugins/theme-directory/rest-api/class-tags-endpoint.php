@@ -7,6 +7,14 @@ class Tags_Endpoint {
 		$args = array(
 			'callback'            => array( $this, 'tags' ),
 			'permission_callback' => '__return_true',
+			'args'                => [
+				'number' => [
+					'default'           => 0,
+					'validate_callback' => function( $param ) {
+						return is_numeric( $param ) && $param >= 0;
+					}
+				]
+			]
 		);
 
 		register_rest_route( 'themes/1.0', 'tags', $args );
@@ -24,7 +32,7 @@ class Tags_Endpoint {
 			'orderby'    => 'count',
 			'order'      => 'DESC',
 			'hide_empty' => false,
-			'number'     => $request['number'] ?? 0,
+			'number'     => $request['number'],
 		) );
 
 		$response = [];
