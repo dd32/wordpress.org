@@ -201,29 +201,22 @@ class Themes_API {
 	 * Gets theme tags, ordered by how popular they are.
 	 */
 	public function hot_tags() {
-		$cache_key = sanitize_key( __METHOD__ );
-		if ( false === ( $this->response = wp_cache_get( $cache_key, $this->cache_group ) ) ) {
-			$tags = get_tags( array(
-				'orderby'    => 'count',
-				'order'      => 'DESC',
-				'hide_empty' => false,
-			) );
+		$cache_key = sanitize_key( __METHOD__ ) . ( $this->request->number ?? '' );
 
-			// Format in the API representation.
-			foreach ( $tags as $tag ) {
-				$this->response[ $tag->slug ] = array(
-					'name'  => $tag->name,
-					'slug'  => $tag->slug,
-					'count' => $tag->count,
-				);
-			}
-
-			wp_cache_add( $cache_key, $this->response, $this->cache_group, $this->cache_life );
+		if ( false !== ( $this->response = wp_cache_get( $cache_key, $this->cache_group ) ) ) {
+			return;
 		}
 
-		if ( ! empty( $this->request->number ) ) {
-			$this->response = array_slice( $this->response, 0, (int) $this->request->number );
-		}
+		$request = new WP_REST_Request( 'GET', '/themes/1.0/tags' );
+		$request->set_query_params( [
+			'number' => $this->request->number ?? ''
+		] );
+
+		$response = rest_do_request( $request );
+
+		$this->response = rest_get_server()->response_to_data( $response, false );
+
+		wp_cache_add( $cache_key, $this->response, $this->cache_group, $this->cache_life );
 	}
 
 	/**
@@ -630,7 +623,7 @@ class Themes_API {
 		}
 
 		$response = rest_do_request(
-			new WP_REST_Request( 'GET', '/themes/1.2/commercial-shops' )
+			new WP_REST_Request( 'GET', '/themes/1.0/commercial-shops' )
 		);
 
 		$this->response = rest_get_server()->response_to_data( $response, false );

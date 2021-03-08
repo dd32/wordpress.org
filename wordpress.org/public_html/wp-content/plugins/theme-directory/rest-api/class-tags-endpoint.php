@@ -20,13 +20,25 @@ class Tags_Endpoint {
 	 * @param \WP_REST_Request $request The Rest API Request.
 	 */
 	function tags( $request ) {
-		$api = wporg_themes_query_api(
-			'hot_tags',
-			$request->get_params(),
-			'api_object'
-		);
+		$tags = get_tags( array(
+			'orderby'    => 'count',
+			'order'      => 'DESC',
+			'hide_empty' => false,
+			'number'     => $request['number'] ?? 0,
+		) );
 
-		return $api->get_result( 'raw' );
+		$response = [];
+
+		// Format in the API representation.
+		foreach ( $tags as $tag ) {
+			$response[ $tag->slug ] = [
+				'name'  => $tag->name,
+				'slug'  => $tag->slug,
+				'count' => $tag->count,
+			];
+		}
+
+		return $response;
 	}
 
 }
