@@ -629,27 +629,11 @@ class Themes_API {
 			return;
 		}
 
-		$this->response = (object) array(
-			'shops' => array()
+		$response = rest_do_request(
+			new WP_REST_Request( 'GET', '/themes/1.2/commercial-shops' )
 		);
 
-		$theme_shops = new WP_Query( array(
-			'post_type'      => 'theme_shop',
-			'posts_per_page' => -1,
-			'orderby'        => 'rand(' . gmdate('YmdH') . ')',
-		) );
-
-		while ( $theme_shops->have_posts() ) {
-			$theme_shops->the_post();
-
-			$this->response->shops[] = (object) array(
-				'shop'  => get_the_title(),
-				'slug'  => sanitize_title( get_the_title() ),
-				'haiku' => get_the_content(),
-				'image' => post_custom( 'image_url' ) ?: sprintf( '//s0.wp.com/mshots/v1/%s?w=572', urlencode( post_custom( 'url' ) ) ),
-				'url'   => post_custom( 'url' ),
-			);
-		}
+		$this->response = rest_get_server()->response_to_data( $response, false );
 
 		wp_cache_set( 'commercial_theme_shops', $this->response, $this->cache_group, 15 * 60 );
 	}

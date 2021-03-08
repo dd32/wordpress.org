@@ -1,5 +1,6 @@
 <?php
 namespace WordPressdotorg\Theme_Directory\Rest_API;
+use WP_Query;
 
 class Commercial_Shops_Endpoint {
 
@@ -20,13 +21,27 @@ class Commercial_Shops_Endpoint {
 	 * @param \WP_REST_Request $request The Rest API Request.
 	 */
 	function shops( $request ) {
-		$api = wporg_themes_query_api(
-			'get_commercial_shops',
-			$request->get_params(),
-			'api_object'
-		);
+		$theme_shops = new WP_Query( array(
+			'post_type'      => 'theme_shop',
+			'posts_per_page' => -1,
+			'orderby'        => 'rand(' . gmdate('YmdH') . ')',
+		) );
 
-		return $api->get_result( 'raw' );
+		$shops = [];
+
+		while ( $theme_shops->have_posts() ) {
+			$theme_shops->the_post();
+
+			$shops[] = (object)[
+				'shop'  => get_the_title(),
+				'slug'  => sanitize_title( get_the_title() ),
+				'haiku' => get_the_content(),
+				'image' => post_custom( 'image_url' ) ?: sprintf( '//s0.wp.com/mshots/v1/%s?w=572', urlencode( post_custom( 'url' ) ) ),
+				'url'   => post_custom( 'url' ),
+			];
+		}
+
+		return compact( 'shops' );
 	}
 
 }
