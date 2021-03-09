@@ -56,15 +56,19 @@
 			</div><!-- .theme-head -->
 
 			<div class="theme-info">
-				<# if ( data.screenshot_url ) { #>
+				<# if ( data.photon_screenshots ) { #>
 				<div class="screenshot">
 					<picture>
-						<source media="(min-width: 782px)" srcset="{{ data.screenshot_url }}?w=572&strip=all, {{ data.screenshot_url }}?w=1144&strip=all 2x">
-						<source media="(min-width: 481px) and (max-width: 782px)" srcset="{{ data.screenshot_url }}?w=700&strip=all, {{ data.screenshot_url }}?w=1400&strip=all 2x">
-						<source media="(min-width: 401px) and (max-width: 480px)" srcset="{{ data.screenshot_url }}?w=420&strip=all, {{ data.screenshot_url }}?w=840&strip=all 2x">
-						<source media="(max-width: 400px)" srcset="{{ data.screenshot_url }}?w=344&strip=all, {{ data.screenshot_url }}?w=688&strip=all 2x">
-						<img src="{{ data.screenshot_url }}?w=572&strip=all" srcset="{{ data.screenshot_url }}?w=1144&strip=all 2x" loading="lazy" alt="">
+						<source media="(min-width: 782px)" srcset="{{ data.photon_screenshots[0] }}?w=572&strip=all, {{ data.photon_screenshots[0] }}?w=1144&strip=all 2x">
+						<source media="(min-width: 481px) and (max-width: 782px)" srcset="{{ data.photon_screenshots[0] }}?w=700&strip=all, {{ data.photon_screenshots[0] }}?w=1400&strip=all 2x">
+						<source media="(min-width: 401px) and (max-width: 480px)" srcset="{{ data.photon_screenshots[0] }}?w=420&strip=all, {{ data.photon_screenshots[0] }}?w=840&strip=all 2x">
+						<source media="(max-width: 400px)" srcset="{{ data.photon_screenshots[0] }}?w=344&strip=all, {{ data.photon_screenshots[0] }}?w=688&strip=all 2x">
+						<img src="{{ data.photon_screenshots[0] }}?w=572&strip=all" srcset="{{ data.photon_screenshots[0] }}?w=1144&strip=all 2x" loading="lazy" alt="">
 					</picture>
+				</div>
+				<# } else if ( data.screenshots ) { #>
+				<div class="screenshot">
+					<img src="{{ data.screenshots[0] }}" loading="lazy" alt="">
 				</div>
 				<# } else { #>
 				<div class="screenshot blank"></div>

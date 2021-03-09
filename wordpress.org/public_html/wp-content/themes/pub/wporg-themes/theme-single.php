@@ -77,8 +77,8 @@
 			</div><!-- .theme-head -->
 
 			<div class="theme-info">
-				<?php if ( $theme->screenshot_url ) { ?>
-					<?php $escaped_screenshot_url = esc_url( $theme->screenshot_url ); ?>
+				<?php if ( $theme->photon_screenshots ) { ?>
+					<?php $escaped_screenshot_url = esc_url( $theme->photon_screenshots[0] ); ?>
 					<div class="screenshot">
 						<picture>
 							<source media="(min-width: 782px)" srcset="<?php echo $escaped_screenshot_url; ?>?w=572&strip=all, <?php echo $escaped_screenshot_url; ?>?w=1144&strip=all 2x">
@@ -87,6 +87,10 @@
 							<source media="(max-width: 400px)" srcset="<?php echo $escaped_screenshot_url; ?>?w=344&strip=all, <?php echo $escaped_screenshot_url; ?>?w=688&strip=all 2x">
 							<img src="<?php echo $escaped_screenshot_url; ?>?w=572&strip=all" srcset="<?php echo $escaped_screenshot_url; ?>?w=1144&strip=all 2x" loading="lazy" alt="">
 						</picture>
+					</div>
+				<?php } elseif ( $theme->screenshots ) { ?>
+					<div class="screenshot">
+						<img src="<?php echo esc_url( $theme->screenshots[0] ); ?>" loading="lazy" alt="">
 					</div>
 				<?php } else { ?>
 					<div class="screenshot blank"></div>
