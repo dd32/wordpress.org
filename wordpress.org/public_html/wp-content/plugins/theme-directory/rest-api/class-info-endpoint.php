@@ -104,7 +104,7 @@ class Info_Endpoint {
 			'reviews_url'       => "https://wordpress.org/support/theme/{$theme->post_name}/reviews/",
 			'homepage'          => "https://wordpress.org/themes/{$theme->post_name}/",
 			'theme_url'         => wporg_themes_get_version_meta( $theme->ID, '_theme_url', $version ),
-			'download_link'     => Themes_API::create_download_link( $theme, $version ),
+			'download_link'     => $repo_package->download_link(),
 			'last_updated'      => get_post_modified_time( 'Y-m-d', true, $theme->ID, true ),
 			'last_updated_time' => get_post_modified_time( 'Y-m-d H:i:s', true, $theme->ID, true ),
 			'creation_time'     => get_post_time( 'Y-m-d H:i:s', true, $theme->ID, true ),
@@ -148,13 +148,13 @@ class Info_Endpoint {
 				return $r;
 			} )( $theme ),
 
-			'versions'          => ( function( $theme ) {
+			'versions'          => ( function( $theme, $repo_package ) {
 				$versions = [];
 				foreach ( array_keys( get_post_meta( $theme->ID, '_status', true ) ) as $version ) {
-					$versions[ $version ] = Themes_API::create_download_link( $theme, $version );
+					$versions[ $version ] = $repo_package->download_link( $version );
 				}
 				return $versions;
-			} )( $theme ),
+			} )( $theme, $repo_package ),
 
 			'parent' => ( function( $theme ) {
 				if ( ! $theme->post_parent ) {

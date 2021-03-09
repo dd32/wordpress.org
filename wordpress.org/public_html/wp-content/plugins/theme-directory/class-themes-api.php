@@ -421,64 +421,6 @@ class Themes_API {
 		return $theme;
 	}
 
-	/* Filter */
-
-	/**
-	 * Marks queries for single themes as archive queries.
-	 *
-	 * When themes are queried directly, namely the `name` parameter is set, WordPress assumes this is a singular view.
-	 * If a theme is not published and the user doing the request is not logged in, the query returns empty. In case
-	 * the requested theme has a version that is awaiting approval, that would not be a desired outcome.
-	 *
-	 * @param WP_Query $query
-	 *
-	 * @return WP_Query
-	 */
-	public function direct_theme_query( $query ) {
-		$query->is_single   = false;
-		$query->is_singular = false;
-
-		$query->is_post_type_archive = true;
-		$query->is_archive           = true;
-
-		return $query;
-	}
-
-	/* Helper functions */
-
-	/**
-	 * Creates download link.
-	 *
-	 * @param  WP_Post $theme
-	 * @param  string $version
-	 *
-	 * @return string
-	 */
-	public static function create_download_link( $theme, $version ) {
-		$url  = 'http://downloads.wordpress.org/theme/';
-		$file = $theme->post_name . '.' . $version . '.zip';
-
-		$file = preg_replace( '/[^a-z0-9_.-]/i', '', $file );
-		$file = preg_replace( '/[.]+/', '.', $file );
-
-		return set_url_scheme( $url . $file );
-	}
-
-	/**
-	 * Fixes mangled descriptions.
-	 *
-	 * @param string $description
-	 *
-	 * @return string
-	 */
-	private function fix_mangled_description( $description ) {
-		$description = str_replace( '&quot;"', '"', $description );
-		$description = str_replace( 'href="//', 'href="http://', $description );
-		$description = strip_tags( $description );
-
-		return $description;
-	}
-
 	/**
 	 * Helper method to return an array of trimmed strings.
 	 */
