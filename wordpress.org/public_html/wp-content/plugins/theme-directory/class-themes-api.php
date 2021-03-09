@@ -358,8 +358,8 @@ class Themes_API {
 		}
 
 		// Fill up the themes lists.
-		foreach ( $response['themes'] as $k => $theme_slug ) {
-			$response['themes'][ $k ] = $this->fill_theme( $theme_slug );
+		foreach ( $response->themes as $k => $theme_slug ) {
+			$response->themes[ $k ] = $this->fill_theme( $theme_slug );
 		}
 
 		$this->response = $response;

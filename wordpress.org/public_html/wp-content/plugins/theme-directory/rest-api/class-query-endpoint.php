@@ -151,9 +151,9 @@ class Query_Endpoint {
 		// Basic information about the request.
 		$response = [
 			'info'   => [
-				'page'   => max( 1, $request['page'] ),
-				'pages'  => max( 1, $wp_query->max_num_pages ),
-				'result' => $wp_query->found_posts,
+				'page'    => max( 1, $request['page'] ),
+				'pages'   => max( 1, $wp_query->max_num_pages ),
+				'results' => $wp_query->found_posts,
 			],
 			'themes' => [],
 		];
@@ -184,7 +184,7 @@ class Query_Endpoint {
 
 		}
 
-		return $response;
+		return (object) $response;
 	}
 
 }

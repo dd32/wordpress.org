@@ -78,7 +78,7 @@ class Info_Endpoint {
 			$themes = get_posts( [
 				'name'        => $request['slug'],
 				'post_type'   => 'repopackage',
-				'post_status' => 'publish,delist',
+				'post_status' => [ 'publish', 'delist' ],
 			] );
 		}
 
@@ -126,7 +126,7 @@ class Info_Endpoint {
 			'author'            => ( function( $theme, $version ) {
 				$author = get_user_by( 'id', $theme->post_author );
 
-				return [
+				return (object) [
 					// WordPress.org user details.
 					'user_nicename' => $author->user_nicename,
 					'profile'       => 'https://profiles.wordpress.org/' . $author->user_nicename,
