@@ -113,9 +113,7 @@ class Query_Endpoint {
 	function query( $request ) {
 		$qv = [
 			'post_type'   => 'repopackage',
-			'post_status' => [
-				'publish'
-			]
+			'post_status' => 'publish',
 		];
 
 		$map = [
