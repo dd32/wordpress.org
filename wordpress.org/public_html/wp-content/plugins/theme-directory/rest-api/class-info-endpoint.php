@@ -9,7 +9,7 @@ class Info_Endpoint {
 
 	function __construct() {
 		$args = array(
-			'callback'            => array( $this, 'info' ),
+			'callback'            => [ $this, 'info' ],
 			'permission_callback' => '__return_true',
 			'args'                => [
 				'slug' => [
@@ -57,11 +57,11 @@ class Info_Endpoint {
 			switch_to_locale( $request['locale'] );
 		}
 
-		$themes = get_posts( array(
+		$themes = get_posts( [
 			'name'        => $request['slug'],
 			'post_type'   => 'repopackage',
 			'post_status' => 'publish,delist',
-		) );
+		] );
 
 		if ( ! $themes ) {
 			$response = new WP_REST_Response( [
