@@ -757,7 +757,7 @@ class Themes_API {
 	 *
 	 * @return string
 	 */
-	private function create_download_link( $theme, $version ) {
+	public static function create_download_link( $theme, $version ) {
 		$url  = 'http://downloads.wordpress.org/theme/';
 		$file = $theme->post_name . '.' . $version . '.zip';
 

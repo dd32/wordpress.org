@@ -140,7 +140,7 @@ class Info_Endpoint {
 					) );
 				}
 
-				return $theme->downloads ?: 0;
+				return (int) $theme->downloads;
 			} )( $theme ),
 		];
 
@@ -188,14 +188,16 @@ class Info_Endpoint {
 			}
 		} ) ( $theme );
 
-		if ( class_exists( 'GlotPress_Translate_Bridge' ) ) {
+		if ( class_exists( 'GlotPress_Translate_Bridge' ) && 'en_US' !== get_locale() ) {
 			$glotpress_project = "wp-themes/{$phil->slug}";
 
 			$phil->name = GlotPress_Translate_Bridge::translate( $phil->name, $glotpress_project );
 
 			$phil->description = GlotPress_Translate_Bridge::translate( $phil->description, $glotpress_project );
 
-			$phil->sections['description'] = GlotPress_Translate_Bridge::translate( $phil->sections['description'], $glotpress_project );
+			foreach ( $phil->sections as $section => $content ) {
+				$phil->sections[ $section ] = GlotPress_Translate_Bridge::translate( $content, $glotpress_project );
+			}
 		}
 
 		return (object) $phil;
