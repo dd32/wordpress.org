@@ -123,7 +123,7 @@
 				<div class="theme-ratings">
 					<h2><?php _e( 'Ratings', 'wporg-themes' ); ?></h2>
 
-					<a class="reviews-link" href="//wordpress.org/support/theme/<?php echo $theme->slug; ?>/reviews/"><?php esc_html_e( 'See all', 'wporg-themes' ); ?></a>
+					<a class="reviews-link" href="<?php echo $theme->reviews_url; ?>"><?php esc_html_e( 'See all', 'wporg-themes' ); ?></a>
 
 					<?php if ( $theme->rating ) { ?>
 					<div class="rating rating-<?php echo round( $theme->rating / 10 ) * 10; ?>">
@@ -146,7 +146,7 @@
 							$rating_bar_width = $theme->num_ratings ? 100 * $theme->ratings[$stars] / $theme->num_ratings : 0;
 						?>
 						<li class="counter-container">
-							<a href="//wordpress.org/support/theme/<?php echo $theme->slug; ?>/reviews/?filter=<?php echo $stars; ?>" title="<?php echo esc_attr( sprintf( _n( 'Click to see reviews that provided a rating of %d star', 'Click to see reviews that provided a rating of %d stars', $stars, 'wporg-themes' ), $stars ) ); ?>">
+							<a href="<?php echo add_query_arg( 'filter', $stars, $theme->reviews_url ); ?>" title="<?php echo esc_attr( sprintf( _n( 'Click to see reviews that provided a rating of %d star', 'Click to see reviews that provided a rating of %d stars', $stars, 'wporg-themes' ), $stars ) ); ?>">
 								<span class="counter-label"><?php printf( _n( '%d star', '%d stars', $stars, 'wporg-themes' ), $stars ); ?></span>
 								<span class="counter-back">
 									<span class="counter-bar" style="width: <?php echo $rating_bar_width; ?>%;"></span>
@@ -158,13 +158,13 @@
 					</ul>
 					<?php } ?>
 
-					<a class="button button-secondary" href="https://wordpress.org/support/theme/<?php echo $theme->slug; ?>/reviews/#new-post"><?php _e( 'Add my review', 'wporg-themes' ); ?></a>
+					<a class="button button-secondary" href="<?php echo $theme->reviews_url; ?>#new-post"><?php _e( 'Add my review', 'wporg-themes' ); ?></a>
 				</div><!-- .theme-rating -->
 
 				<div class="theme-support">
 					<h2><?php _e( 'Support', 'wporg-themes' ); ?></h2>
 					<p><?php _e( 'Got something to say? Need help?', 'wporg-themes' ); ?></p>
-					<a href="//wordpress.org/support/theme/<?php echo $theme->slug; ?>" class="button button-secondary"><?php _e( 'View support forum', 'wporg-themes' ); ?></a>
+					<a href="<?php echo $theme->support_url; ?>" class="button button-secondary"><?php _e( 'View support forum', 'wporg-themes' ); ?></a>
 				</div><!-- .theme-support -->
 
 				<div class="theme-report">

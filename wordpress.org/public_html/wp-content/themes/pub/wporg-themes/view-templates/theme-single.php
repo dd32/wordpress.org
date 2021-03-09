@@ -93,7 +93,7 @@
 				<div class="theme-ratings">
 					<h3><?php _e( 'Ratings', 'wporg-themes' ); ?></h3>
 
-					<a class="reviews-link" href="//wordpress.org/support/theme/{{ data.id }}/reviews/"><?php esc_html_e( 'See all', 'wporg-themes' ); ?></a>
+					<a class="reviews-link" href="{{ data.reviews_url }}"><?php esc_html_e( 'See all', 'wporg-themes' ); ?></a>
 
 					<# if ( data.rating ) { #>
 					<div class="rating rating-{{ Math.round( data.rating / 10 ) * 10 }}">
@@ -114,7 +114,7 @@
 					<ul>
 						<?php foreach ( range( 5, 1 ) as $stars ) : ?>
 						<li class="counter-container">
-							<a href="//wordpress.org/support/theme/{{ data.id }}/reviews/?filter=<?php echo $stars; ?>" title="<?php echo esc_attr( sprintf( _n( 'Click to see reviews that provided a rating of %d star', 'Click to see reviews that provided a rating of %d stars', $stars, 'wporg-themes' ), $stars ) ); ?>">
+							<a href="{{ data.reviews_url }}?filter=<?php echo $stars; ?>" title="<?php echo esc_attr( sprintf( _n( 'Click to see reviews that provided a rating of %d star', 'Click to see reviews that provided a rating of %d stars', $stars, 'wporg-themes' ), $stars ) ); ?>">
 								<span class="counter-label"><?php printf( _n( '%d star', '%d stars', $stars, 'wporg-themes' ), $stars ); ?></span>
 								<span class="counter-back">
 									<span class="counter-bar" style="width: {{ 100 * data.ratings[<?php echo $stars; ?>] / data.num_ratings }}%;"></span>
@@ -126,13 +126,13 @@
 					</ul>
 					<# } #>
 
-					<a class="button button-secondary" href="https://wordpress.org/support/theme/{{ data.id }}/reviews/#new-post"><?php _e( 'Add my review', 'wporg-themes' ); ?></a>
+					<a class="button button-secondary" href="{{ data.reviews_url }}#new-post"><?php _e( 'Add my review', 'wporg-themes' ); ?></a>
 				</div><!-- .theme-rating -->
 
 				<div class="theme-support">
 					<h3><?php _e( 'Support', 'wporg-themes' ); ?></h3>
 					<p><?php _e( 'Got something to say? Need help?', 'wporg-themes' ); ?></p>
-					<a href="//wordpress.org/support/theme/{{ data.slug }}" class="button button-secondary"><?php _e( 'View support forum', 'wporg-themes' ); ?></a>
+					<a href="{{ data.support_url }}" class="button button-secondary"><?php _e( 'View support forum', 'wporg-themes' ); ?></a>
 				</div><!-- .theme-support -->
 
 				<div class="theme-report">

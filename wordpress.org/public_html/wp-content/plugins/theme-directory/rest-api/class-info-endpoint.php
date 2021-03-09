@@ -100,6 +100,7 @@ class Info_Endpoint {
 			'slug'              => $theme->post_name,
 			'version'           => $version,
 			'preview_url'       => "https://wp-themes.com/{$theme->post_name}/",
+			'support_url'       => "https://wordpress.org/support/theme/{$theme->post_name}/",
 			'reviews_url'       => "https://wordpress.org/support/theme/{$theme->post_name}/reviews/",
 			'homepage'          => "https://wordpress.org/themes/{$theme->post_name}/",
 			'theme_url'         => wporg_themes_get_version_meta( $theme->ID, '_theme_url', $version ),
