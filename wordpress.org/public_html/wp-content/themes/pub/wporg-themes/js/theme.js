@@ -335,27 +335,7 @@ window.wp = window.wp || {};
 
 			data = _.extend({
 				per_page: themes.data.settings.postsPerPage,
-				locale: themes.data.settings.locale,
-				fields: {
-					description: true,
-					sections: false,
-					tested: true,
-					requires: true,
-					downloaded: false,
-					downloadlink: true,
-					last_updated: true,
-					homepage: true,
-					theme_url: true,
-					parent: true,
-					tags: true,
-					rating: true,
-					ratings: true,
-					num_ratings: true,
-					extended_author: true,
-					photon_screenshots: true,
-					active_installs: true,
-					requires_php: true,
-				}
+				locale: themes.data.settings.locale
 			}, request);
 
 			// Requests against api.WordPress.org need to be nested.

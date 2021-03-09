@@ -273,30 +273,25 @@ class Themes_API {
 			return;
 		}
 
-		// Set which fields wanted by default:
-		$defaults = array(
-			'sections'     => true,
-			'rating'       => true,
-			'downloaded'   => true,
-			'downloadlink' => true,
-			'last_updated' => true,
-			'homepage'     => true,
-			'tags'         => true,
-			'template'     => true,
-		);
-		if ( defined( 'THEMES_API_VERSION' ) && THEMES_API_VERSION >= 1.2 ) {
-			$defaults['extended_author'] = true;
-			$defaults['num_ratings'] = true;
-			$defaults['reviews_url'] = true;
-			$defaults['parent'] = true;
-			$defaults['requires'] = true;
-			$defaults['requires_php'] = true;
-			$defaults['creation_time'] = true;
+		if ( defined( 'THEMES_API_VERSION' ) && THEMES_API_VERSION < 1.2 ) {
+			// Set which fields wanted by default:
+			$defaults = array(
+				'sections'     => true,
+				'rating'       => true,
+				'downloaded'   => true,
+				'downloadlink' => true,
+				'last_updated' => true,
+				'homepage'     => true,
+				'tags'         => true,
+				'template'     => true,
+			);
+			$this->request->fields = (array) ( $this->request->fields ?? [] );
+			$this->fields = array_merge( $this->fields, $defaults, (array) $this->request->fields );
+		} else {
+			// Just return all fields for API v1.2+
+			unset( $this->request->fields );
+			$this->fields = [];
 		}
-
-		$this->request->fields = (array) ( $this->request->fields ?? [] );
-
-		$this->fields = array_merge( $this->fields, $defaults, (array) $this->request->fields );
 
 		$this->response = $this->fill_theme( $this->request->slug );
 	}
@@ -322,24 +317,21 @@ class Themes_API {
 	 *          download_url
 	 */
 	public function query_themes() {
-		// Set which fields wanted by default:
-		$defaults = array(
-			'description' => true,
-			'rating'      => true,
-			'homepage'    => true,
-			'template'    => true,
-		);
-		if ( defined( 'THEMES_API_VERSION' ) && THEMES_API_VERSION >= 1.2 ) {
-			$defaults['extended_author'] = true;
-			$defaults['num_ratings'] = true;
-			$defaults['parent'] = true;
-			$defaults['requires'] = true;
-			$defaults['requires_php'] = true;
+		if ( defined( 'THEMES_API_VERSION' ) && THEMES_API_VERSION < 1.2 ) {
+			// Set which fields wanted by default:
+			$defaults = array(
+				'description' => true,
+				'rating'      => true,
+				'homepage'    => true,
+				'template'    => true,
+			);
+
+			$this->request->fields = (array) ( $this->request->fields ?? [] );
+			$this->fields          = array_merge( $this->fields, $defaults, $this->request->fields );
+		} else {
+			unset( $this->request->fields );
+			$this->fields = [];
 		}
-
-		$this->request->fields = (array) ( $this->request->fields ?? [] );
-
-		$this->fields = array_merge( $this->fields, $defaults, $this->request->fields );
 
 		// If there is a cached result, return that.
 		$cache_key = sanitize_key( __METHOD__ . ':' . get_locale() . ':' . md5( serialize( $this->request ) ) );
@@ -418,7 +410,7 @@ class Themes_API {
 		}
 
 		// Filter out the fields we don't need.
-		if ( empty( $theme->error ) ) {
+		if ( empty( $theme->error ) && $this->fields ) {
 			foreach ( $this->fields as $field => $wanted ) {
 				if ( empty( $wanted ) && isset( $theme->$field ) ) {
 					unset( $theme->$field );
