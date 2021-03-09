@@ -169,7 +169,7 @@ class Info_Endpoint {
 				];
 			} )( $theme ),
 
-			'downloads' => ( function( $theme ) {
+			'downloaded' => ( function( $theme ) {
 				if ( defined( 'IS_WPORG' ) && IS_WPORG ) {
 					global $wpdb;
 					return (int) $wpdb->get_var( $wpdb->prepare(
@@ -178,7 +178,7 @@ class Info_Endpoint {
 					) );
 				}
 
-				return (int) $theme->downloads;
+				return (int) $theme->downloaded;
 			} )( $theme ),
 		];
 
