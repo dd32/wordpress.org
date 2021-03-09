@@ -11,7 +11,8 @@ class Features_Endpoint {
 			'permission_callback' => '__return_true',
 			'args'                => [
 				'wp_version' => [
-					'default'           => 0,
+					'type'              => 'string',
+					'default'           => '',
 					'validate_callback' => function( $param ) {
 						return preg_match( '!^\d\.\d!', $param );
 					}

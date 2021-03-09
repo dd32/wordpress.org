@@ -9,10 +9,10 @@ class Tags_Endpoint {
 			'permission_callback' => '__return_true',
 			'args'                => [
 				'number' => [
-					'default'           => 0,
-					'validate_callback' => function( $param ) {
-						return is_numeric( $param ) && $param >= 0;
-					}
+					'type'    => 'integer',
+					'default' => 0,
+					'minimum' => 0,
+					'maximum' => 99
 				]
 			]
 		);
