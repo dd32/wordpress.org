@@ -21,10 +21,29 @@ class Info_Endpoint {
 			]
 		);
 
-		register_rest_route( 'themes/1.0', 'info(/(?P<slug>[^/]+))?', $args );
-		register_rest_route( 'themes/1.1', 'info(/(?P<slug>[^/]+))?', $args );
 		register_rest_route( 'themes/1.2', 'info(/(?P<slug>[^/]+))?', $args );
+
+		$args['callback'] = [ $this, 'info_11' ];
+		register_rest_route( 'themes/1.1', 'info(/(?P<slug>[^/]+))?', $args );
+		register_rest_route( 'themes/1.0', 'info(/(?P<slug>[^/]+))?', $args );
 	}
+
+	/**
+	 * Endpoint to handle 1.0/1.1 theme_information API calls.
+	 *
+	 * @param \WP_REST_Request $request The Rest API Request.
+	 */
+	function info_11( $request ) {
+		$response = $this->info( $request );
+
+		// Back-compat, for older endpoints it returns false on error.
+		if ( !empty( $response->data['error'] ) && 'Theme not found' === $response->data['error'] ) {
+			$response->set_data( false );
+		}
+
+		return $response;
+	}
+
 
 	/**
 	 * Endpoint to handle theme_information API calls.
