@@ -176,7 +176,7 @@ class Info_Endpoint {
 
 			return [
 				'screenshot_url'        => $screenshot,
-				'photon_screenshot_url' => sprintf(
+				'photon_screenshots' => (array) sprintf(
 					'https://i0.wp.com/themes.svn.wordpress.org/%1$s/%2$s/%3$s',
 					$theme->post_name,
 					$version,
