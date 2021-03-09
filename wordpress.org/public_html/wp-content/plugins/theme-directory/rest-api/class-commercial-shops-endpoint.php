@@ -41,7 +41,7 @@ class Commercial_Shops_Endpoint {
 			];
 		}
 
-		return compact( 'shops' );
+		return (object) compact( 'shops' );
 	}
 
 }
