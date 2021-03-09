@@ -19,6 +19,7 @@ include __DIR__ . '/upload.php';
 
 // Load Themes API adjustments.
 include __DIR__ . '/themes-api.php';
+include __DIR__ . '/class-themes-api.php';
 
 // Load adjustments to the edit.php screen for repopackage posts.
 include __DIR__ . '/admin-edit.php';
@@ -855,10 +856,6 @@ function wporg_themes_theme_information( $slug ) {
  * @param $format string The format to return the data in. Valid values: 'json', 'php', 'api_object', 'raw' (default)
  */
 function wporg_themes_query_api( $method, $args = array(), $format = 'raw' ) {
-	if ( ! class_exists( 'Themes_API' ) ) {
-		include_once __DIR__ . '/class-themes-api.php';
-	}
-
 	$api = new Themes_API( $method, $args );
 
 	return $api->get_result( $format );
