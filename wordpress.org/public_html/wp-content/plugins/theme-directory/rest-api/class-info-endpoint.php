@@ -181,9 +181,9 @@ class Info_Endpoint {
 			} else {
 				// Fallback to postmeta if it exists.
 				return [
-					'ratings'     => $theme->ratings,
-					'rating'      => $theme->rating,
-					'num_ratings' => $theme->num_ratings,
+					'ratings'     => (array) $theme->ratings,
+					'rating'      => (int) $theme->rating,
+					'num_ratings' => (int) $theme->num_ratings,
 				];
 			}
 		} ) ( $theme );
