@@ -306,30 +306,7 @@ class Themes_API {
 
 		$this->fields = array_merge( $this->fields, $defaults, (array) $this->request->fields );
 
-		// If there is a cached result, return that.
-		$cache_key = sanitize_key( __METHOD__ . ':' . get_locale() . ':' . $this->request->slug . ':' . md5( serialize( $this->fields ) ) );
-		if ( false !== ( $this->response = wp_cache_get( $cache_key, $this->cache_group ) ) && empty( $this->request->cache_buster ) ) {
-			return;
-		}
-
-		if ( !empty( $post ) && 'repopackage' == $post->post_type && $this->request->slug === $post->post_name ) {
-			$this->response = $this->fill_theme( $post );
-		} else {
-			// get_post_by_slug()
-			$themes = get_posts( array(
-				'name'      => $this->request->slug,
-				'post_type' => 'repopackage',
-				'post_status' => 'publish,delist',
-			) );
-
-			if ( $themes ) {
-				$this->response = $this->fill_theme( $themes[0] );
-			} else {
-				$this->response = (object) array( 'error' => 'Theme not found' ); // Check get_result() if changing this string.
-			}
-		}
-
-		wp_cache_set( $cache_key, $this->response, $this->cache_group, $this->cache_life );
+		$this->response = $this->fill_theme( $this->request->slug );
 	}
 
 	/**
@@ -509,219 +486,34 @@ class Themes_API {
 	 * @return object
 	 */
 	public function fill_theme( $theme ) {
-		// If there is a cached theme for the current locale, return that.
-		$cache_key = sanitize_key( implode( '-', array( $theme->post_name, md5( serialize( $this->fields ) ), get_locale() ) ) );
-		if ( false !== ( $phil = wp_cache_get( $cache_key, $this->cache_group ) ) && empty( $this->request->cache_buster ) ) {
-			return $phil;
+		$slug = is_object( $theme ) ? $theme->post_name : $theme;
+
+		$cache_key = get_locale() . ':' . $slug;
+		$theme = wp_cache_get( $cache_key, $this->cache_group );
+
+		if ( ! $theme || ! empty( $this->request->cache_buster ) ) {
+			$request = new WP_REST_Request( 'GET', '/themes/1.2/info' );
+			$request->set_query_params( [
+				'slug' => $slug
+			] );
+
+			$response = rest_do_request( $request );
+
+			$theme = rest_get_server()->response_to_data( $response, false );
+
+			wp_cache_set( $cache_key, $theme, $this->cache_group, $this->cache_life );
 		}
 
-		global $wpdb;
-
-		$phil = (object) array(
-			'name' => $theme->post_title,
-			'slug' => $theme->post_name,
-		);
-
-		$repo_package  = new WPORG_Themes_Repo_Package( $theme->ID );
-		$phil->version = $repo_package->latest_version();
-
-		$phil->preview_url = "https://wp-themes.com/{$theme->post_name}";
-
-		$author = get_user_by( 'id', $theme->post_author );
-
-		if ( $this->fields['extended_author'] ) {
-			$phil->author = (object) array(
-				// WordPress.org user details.
-				'user_nicename' => $author->user_nicename,
-				'profile'       => 'https://profiles.wordpress.org/' . $author->user_nicename,
-				'avatar'        => 'https://secure.gravatar.com/avatar/' . md5( $author->user_email ) . '?s=96&d=monsterid&r=g',
-				'display_name'  => $author->display_name ?: $author->user_nicename,
-
-				// Theme headers details.
-				'author'        => wporg_themes_get_version_meta( $theme->ID, '_author', $phil->version ),
-				'author_url'    => wporg_themes_get_version_meta( $theme->ID, '_author_url', $phil->version ),
-			);
-		} else {
-			$phil->author = $author->user_nicename;
-		}
-
-		if ( $this->fields['screenshot_url'] || $this->fields['screenshot_count'] || $this->fields['screenshots'] ) {
-
-			// TODO this whole thing will need refactoring for multiple screenshots, if and when.
-			$screenshot_base = "https://wp-themes.com/wp-content/themes/{$theme->post_name}/screenshot";
-			if ( $this->fields['screenshot_url'] ) {
-				$screenshots = get_post_meta( $theme->ID, '_screenshot', true );
-
-				if ( $this->fields['photon_screenshots'] ) {
-					$phil->screenshot_url = sprintf( 'https://i0.wp.com/themes.svn.wordpress.org/%1$s/%2$s/%3$s', $phil->slug, $phil->version, $screenshots[ $phil->version ] );
-				} else {
-					$phil->screenshot_url = sprintf( '//ts.w.org/wp-content/themes/%1$s/%2$s?ver=%3$s', $phil->slug, $screenshots[ $phil->version ], $phil->version );
-				}
-			}
-
-			if ( $this->fields['screenshot_count'] || $this->fields['screenshots'] ) {
-				$screenshot_count = 1; // TODO
-				if ( $screenshot_count < 1 ) {
-					$screenshot_count = 1;
-				}
-
-				if ( $this->fields['screenshot_count'] ) {
-					$phil->screenshot_count = $screenshot_count;
-				}
-
-				if ( $this->fields['screenshots'] ) {
-					$phil->screenshots = array( $screenshot_base . '.png' );
-					for ( $i = 2; $i <= $screenshot_count; $i ++ ) {
-						$phil->screenshots[] = $screenshot_count . '-' . $i . '.png';
-					}
+		// Filter out the fields we don't need.
+		if ( empty( $theme->error ) ) {
+			foreach ( $this->fields as $field => $wanted ) {
+				if ( empty( $wanted ) && isset( $theme->$field ) ) {
+					unset( $theme->$field );
 				}
 			}
 		}
 
-		if ( $this->fields['theme_url'] ) {
-			$phil->theme_url = wporg_themes_get_version_meta( $theme->ID, '_theme_url', $phil->version );
-		}
-
-		if ( $this->fields['ratings'] ) {
-			// Amount of reviews for each rating level.
-			$phil->ratings = \WPORG_Ratings::get_rating_counts( 'theme', $theme->post_name );
-		}
-
-		if ( $this->fields['rating'] ) {
-			// Return a % rating; Rating range: 0~5.
-			$phil->rating = \WPORG_Ratings::get_avg_rating( 'theme', $theme->post_name ) * 20;
-			$phil->num_ratings = \WPORG_Ratings::get_rating_count( 'theme', $theme->post_name );
-		}
-
-		if ( $this->fields['reviews_url'] ) {
-			$phil->reviews_url = 'https://wordpress.org/support/theme/' . $theme->post_name . '/reviews/';
-		}
-
-		if ( $this->fields['downloaded'] ) {
-			$key = "theme-down:$theme->post_name";
-
-			if ( false === ( $phil->downloaded = wp_cache_get( $key, $this->cache_group ) ) ) {
-				$phil->downloaded = (int) $wpdb->get_var( $wpdb->prepare( "SELECT SUM( downloads ) FROM bb_themes_stats WHERE slug = %s", $theme->post_name ) );
-				wp_cache_set( $key, $phil->downloaded, $this->cache_group, $this->cache_life );
-			}
-		}
-
-		if ( $this->fields['active_installs'] ) {
-			$phil->active_installs = (int) get_post_meta( $theme->ID, '_active_installs', true );
-
-			// 0, 1m+, rounded to nearest significant digit
-			if ( $phil->active_installs < 10 ) {
-				$phil->active_installs = 0;
-			} elseif ( $phil->active_installs >= 3000000 ) {
-				$phil->active_installs = 3000000;
-			} else {
-				$phil->active_installs = strval( $phil->active_installs )[0] * pow( 10, floor( log10( $phil->active_installs ) ) );
-			}
-		}
-
-		if ( $this->fields['last_updated'] ) {
-			$phil->last_updated      = get_post_modified_time( 'Y-m-d', true, $theme->ID, true );
-			$phil->last_updated_time = get_post_modified_time( 'Y-m-d H:i:s', true, $theme->ID, true );
-		}
-
-		if ( $this->fields['creation_time'] ) {
-			$phil->creation_time = get_post_time( 'Y-m-d H:i:s', true, $theme->ID, true );
-		}
-
-		if ( $this->fields['homepage'] ) {
-			$phil->homepage = "https://wordpress.org/themes/{$theme->post_name}/";
-		}
-
-		if ( $this->fields['description'] || $this->fields['sections'] ) {
-			if ( $this->fields['sections'] ) {
-				// Client wants Sections.
-				$phil->sections = array();
-				if ( preg_match_all( '|--theme-data-(.+?)-->(.*?)<!|ims', $theme->post_content, $pieces ) ) {
-					for ( $i = 0; $i < count( $pieces[1] ); $i ++ ) {
-						$phil->sections[ $pieces[1][ $i ] ] = trim( $pieces[2][ $i ] );
-					}
-				} else {
-					// Doesn't have any sections:
-					$phil->sections['description'] = $this->fix_mangled_description( trim( $theme->post_content ) );
-				}
-			} else {
-				// No sections, Ok, Just return the Description (First field?)
-				if ( strpos( $theme->post_content, '<!--' ) ) {
-					$phil->description = trim( substr( $theme->post_content, 0, strpos( $theme->post_content, '<!--' ) ) );
-				} else {
-					$phil->description = trim( $theme->post_content );
-				}
-				$phil->description = $this->fix_mangled_description( $phil->description );
-			}
-		}
-
-		if ( $this->fields['downloadlink'] ) {
-			$phil->download_link = $this->create_download_link( $theme, $phil->version );
-		}
-
-		if ( $this->fields['tags'] ) {
-			$phil->tags = array();
-			foreach ( wp_get_post_tags( $theme->ID ) as $tag ) {
-				$phil->tags[ $tag->slug ] = $tag->name;
-			}
-		}
-
-		if ( $theme->post_parent && ( $this->fields['template'] || $this->fields['parent'] ) ) {
-			$parent = get_post( $theme->post_parent );
-
-			if ( $parent ) {
-				if ( $this->fields['template'] ) {
-					$phil->template = $parent->post_name;
-				}
-
-				if ( $this->fields['parent'] ) {
-					$phil->parent = array(
-						'slug'     => $parent->post_name,
-						'name'     => $parent->post_title,
-						'homepage' => "https://wordpress.org/themes/{$parent->post_name}/",
-					);
-				}
-			}
-		}
-
-		if ( $this->fields['versions'] ) {
-			$phil->versions = array();
-
-			foreach ( array_keys( get_post_meta( $theme->ID, '_status', true ) ) as $version ) {
-				$phil->versions[ $version ] = $this->create_download_link( $theme, $version );
-			}
-		}
-
-		if ( $this->fields['requires'] ) {
-			$phil->requires = wporg_themes_get_version_meta( $theme->ID, '_requires', $phil->version );
-		}
-
-		if ( $this->fields['requires_php'] ) {
-			$phil->requires_php = wporg_themes_get_version_meta( $theme->ID, '_requires_php', $phil->version );
-		}
-
-		if ( $this->fields['trac_tickets'] ) {
-			$phil->trac_tickets = get_post_meta( $theme->ID, '_ticket_id', true );
-		}
-
-		if ( class_exists( 'GlotPress_Translate_Bridge' ) ) {
-			$glotpress_project = "wp-themes/{$phil->slug}";
-
-			$phil->name = GlotPress_Translate_Bridge::translate( $phil->name, $glotpress_project );
-
-			if ( isset( $phil->description ) ) {
-				$phil->description = GlotPress_Translate_Bridge::translate( $phil->description, $glotpress_project );
-			}
-
-			if ( isset( $phil->sections['description'] ) ) {
-				$phil->sections['description'] = GlotPress_Translate_Bridge::translate( $phil->sections['description'], $glotpress_project );
-			}
-
-		}
-
-		wp_cache_set( $cache_key, $phil, $this->cache_group, $this->cache_life );
-
-		return $phil;
+		return $theme;
 	}
 
 	/* Filter */
