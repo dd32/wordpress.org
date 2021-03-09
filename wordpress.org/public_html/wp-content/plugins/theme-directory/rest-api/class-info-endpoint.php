@@ -13,12 +13,17 @@ class Info_Endpoint {
 			'permission_callback' => '__return_true',
 			'args'                => [
 				'slug' => [
-					'required' => true,
+					'required'          => true,
+					'type'              => [ 'string', 'integer' ],
+					'sanitize_callback' => function( $value ) {
+						return is_string( $value ) ? trim( $value ) : $value;
+					},
 				],
 				'locale'          => [
 					'default' => 'en_US',
+					'type'    => 'string',
 				],
-			]
+			],
 		);
 
 		register_rest_route( 'themes/1.2', 'info(/(?P<slug>[^/]+))?', $args );
@@ -44,7 +49,6 @@ class Info_Endpoint {
 		return $response;
 	}
 
-
 	/**
 	 * Endpoint to handle theme_information API calls.
 	 *
@@ -57,11 +61,26 @@ class Info_Endpoint {
 			switch_to_locale( $request['locale'] );
 		}
 
-		$themes = get_posts( [
-			'name'        => $request['slug'],
-			'post_type'   => 'repopackage',
-			'post_status' => 'publish,delist',
-		] );
+		if ( is_int( $request['slug'] ) ) {
+			$themes = [];
+			$theme  = get_post( $request['slug'] );
+			if (
+				$theme &&
+				'repopackage' === $theme->post_type &&
+				in_array(
+					$theme->post_status,
+					[ 'publish', 'delist' ]
+				)
+			) {
+				$themes[] = $theme;
+			}
+		} else {
+			$themes = get_posts( [
+				'name'        => $request['slug'],
+				'post_type'   => 'repopackage',
+				'post_status' => 'publish,delist',
+			] );
+		}
 
 		if ( ! $themes ) {
 			$response = new WP_REST_Response( [

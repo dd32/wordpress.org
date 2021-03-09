@@ -273,14 +273,6 @@ class Themes_API {
 			return;
 		}
 
-		// Theme slug to identify theme.
-		if ( empty( $this->request->slug ) || ! trim( $this->request->slug ) ) {
-			$this->response = (object) array( 'error' => 'Slug not provided' );
-			return;
-		}
-
-		$this->request->slug = trim( $this->request->slug );
-
 		// Set which fields wanted by default:
 		$defaults = array(
 			'sections'     => true,
@@ -350,106 +342,27 @@ class Themes_API {
 		$this->fields = array_merge( $this->fields, $defaults, $this->request->fields );
 
 		// If there is a cached result, return that.
-		$cache_key = sanitize_key( __METHOD__ . ':' . get_locale() . ':' . md5( serialize( $this->request ) . serialize( $this->fields ) ) );
-		if ( false !== ( $this->response = wp_cache_get( $cache_key, $this->cache_group ) ) && empty( $this->request->cache_buster ) ) {
-			return;
+		$cache_key = sanitize_key( __METHOD__ . ':' . get_locale() . ':' . md5( serialize( $this->request ) ) );
+		$response  = wp_cache_get( $cache_key, $this->cache_group );
+
+		if ( false === $response || ! empty( $this->request->cache_buster ) ) {
+			$request = new WP_REST_Request( 'GET', '/themes/1.2/query' );
+			$request->set_query_params( (array) $this->request );
+			$request->set_param( 'format', 'slugs' );
+	
+			$response = rest_do_request( $request );
+	
+			$response = rest_get_server()->response_to_data( $response, false );
+	
+			wp_cache_set( $cache_key, $response, $this->cache_group, $this->cache_life );
 		}
-
-		$this->result = $this->perform_wp_query();
-
-		// Basic information about the request.
-		$this->response = (object) array(
-			'info'   => array(),
-			'themes' => array(),
-		);
-
-		// Basic information about the request.
-		$this->response->info = array(
-			'page'    => max( 1, $this->result->query_vars['paged'] ),
-			'pages'   => max( 1, $this->result->max_num_pages ),
-			'results' => (int) $this->result->found_posts,
-		);
 
 		// Fill up the themes lists.
-		foreach ( (array) $this->result->posts as $theme ) {
-			$this->response->themes[] = $this->fill_theme( $theme );
+		foreach ( $response['themes'] as $k => $theme_slug ) {
+			$response['themes'][ $k ] = $this->fill_theme( $theme_slug );
 		}
 
-		wp_cache_set( $cache_key, $this->response, $this->cache_group, $this->cache_life );
-	}
-
-	public function perform_wp_query() {
-		$this->query = array(
-			'post_type'   => 'repopackage',
-			'post_status' => 'publish',
-		);
-		if ( isset( $this->request->page ) ) {
-			$this->query['paged'] = (int) $this->request->page;
-		}
-		if ( isset( $this->request->per_page ) ) {
-			// Maximum of 999 themes per page, and a minimum of 1.
-			$this->query['posts_per_page'] = min( (int) $this->request->per_page, 999 );
-			if ( $this->query['posts_per_page'] < 1 ) {
-				unset( $this->query['posts_per_page'] );
-			}
-		}
-
-		// Views
-		if ( ! empty( $this->request->browse ) ) {
-			$this->query['browse'] = (string) $this->request->browse;
-
-			if ( 'featured' == $this->request->browse ) {
-				$this->cache_life = HOUR_IN_SECONDS;
-			} elseif ( 'favorites' == $this->request->browse ) {
-				$this->query['favorites_user'] = $this->request->user;
-			}
-
-		}
-
-		// Tags
-		if ( ! empty( $this->request->tag ) ) {
-			$this->request->tag = (array) $this->request->tag;
-
-			// Replace updated tags.
-			$updated_tags = array(
-				'fixed-width'    => 'fixed-layout',
-				'flexible-width' => 'fluid-layout',
-			);
-			foreach ( $updated_tags as $old => $new ) {
-				if ( $key = array_search( $old, $this->request->tag ) ) {
-					$this->request->tag[ $key ] = $new;
-				}
-			}
-
-			$this->query['tax_query'] = array(
-				array(
-					'taxonomy' => 'post_tag',
-					'field'    => 'slug',
-					'terms'    => $this->request->tag,
-					'operator' => 'AND',
-				),
-			);
-		}
-
-		// Search
-		if ( ! empty( $this->request->search ) ) {
-			$this->query['s'] = (string) $this->request->search;
-		}
-
-		// Direct theme
-		if ( ! empty( $this->request->theme ) ) {
-			$this->query['name'] = (string) $this->request->theme;
-
-			add_filter( 'parse_query', array( $this, 'direct_theme_query' ) );
-		}
-
-		// Author
-		if ( ! empty( $this->request->author ) ) {
-			$this->query['author_name'] = (string) $this->request->author;
-		}
-
-		// Query
-		return new WP_Query( $this->query );
+		$this->response = $response;
 	}
 
 	/**
@@ -488,7 +401,7 @@ class Themes_API {
 	public function fill_theme( $theme ) {
 		$slug = is_object( $theme ) ? $theme->post_name : $theme;
 
-		$cache_key = get_locale() . ':' . $slug;
+		$cache_key = 'theme:' . get_locale() . ':' . $slug;
 		$theme = wp_cache_get( $cache_key, $this->cache_group );
 
 		if ( ! $theme || ! empty( $this->request->cache_buster ) ) {
