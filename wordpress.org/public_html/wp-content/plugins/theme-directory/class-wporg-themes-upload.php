@@ -439,10 +439,10 @@ class WPORG_Themes_Upload {
 		$this->trac_ticket->id = $ticket_id;
 
 		// Add a or update the Theme Directory entry for this theme.
-		$this->create_or_update_theme_post( $ticket_id );
+		$this->create_or_update_theme_post();
 
 		// Send theme author an email for peace of mind.
-		$this->send_email_notification( $ticket_id );
+		$this->send_email_notification();
 
 		do_action( 'theme_upload', $this->theme, $this->theme_post );
 
@@ -450,7 +450,7 @@ class WPORG_Themes_Upload {
 		$this->log_to_slack( 'allowed' );
 
 		// Initiate a GitHub actions run for the theme.
-		$this->trigger_e2e_run( $ticket_id );
+		$this->trigger_e2e_run();
 
 		// Success!
 		/* translators: 1: theme name, 2: Trac ticket URL */
@@ -972,10 +972,8 @@ TICKET;
 
 	/**
 	 * Creates or updates a theme post.
-	 *
-	 * @param int $ticket_id Trac ticket ID
 	 */
-	public function create_or_update_theme_post( $ticket_id ) {
+	public function create_or_update_theme_post() {
 		$upload_date = current_time( 'mysql' );
 
 		// If we already have a post, get its ID.
@@ -1008,7 +1006,7 @@ TICKET;
 			'_requires'     => $this->sanitize_version_like_field( $this->theme->get( 'RequiresWP' ), 'requires' ),
 			'_requires_php' => $this->sanitize_version_like_field( $this->theme->get( 'RequiresPHP' ) ),
 			'_upload_date'  => $upload_date,
-			'_ticket_id'    => $ticket_id,
+			'_ticket_id'    => $$this->trac_ticket->id ?? 0,
 			'_screenshot'   => $this->theme->screenshot,
 		);
 
@@ -1024,7 +1022,9 @@ TICKET;
 		}
 
 		// Add an additional row with the trac ticket ID, to make it possible to find the post by this ID later.
-		add_post_meta( $post_id, sanitize_key( '_trac_ticket_' . $this->theme->get( 'Version' ) ), $ticket_id );
+		if ( ! empty( $this->trac_ticket->id ) ) {
+			add_post_meta( $post_id, sanitize_key( '_trac_ticket_' . $this->theme->get( 'Version' ) ), $this->trac_ticket->id );
+		}
 
 		// Discard versions that are awaiting review, and maybe set this upload as live.
 		$version_status = 'new';
@@ -1139,10 +1139,8 @@ TICKET;
 
 	/**
 	 * Sends out an email confirmation to the theme's author.
-	 *
-	 * @param int $ticket_id Trac ticket ID
 	 */
-	public function send_email_notification( $ticket_id ) {
+	public function send_email_notification() {
 		if ( ! empty( $this->theme_post ) ) {
 
 			if (
@@ -1151,6 +1149,10 @@ TICKET;
 			) {
 				// Do nothing. The update has been set as live. No need to let them know it's been uploaded.
 				// wporg_themes_approve_version() will send a "Congratulations! It's live!" email momentarily.
+				return;
+			}
+
+			if ( empty( $this->trac_ticket->id ) ) {
 				return;
 			}
 
@@ -1170,7 +1172,7 @@ The WordPress.org Themes Team
 https://make.wordpress.org/themes', 'wporg-themes' ),
 				$this->theme->display( 'Version' ),
 				$this->theme->display( 'Name' ),
-				'https://themes.trac.wordpress.org/ticket/' . $ticket_id
+				'https://themes.trac.wordpress.org/ticket/' . $this->trac_ticket->id
 			);
 		} else {
 			/* translators: %s: theme name */
@@ -1212,7 +1214,7 @@ Subscribe to the Theme Review blog to stay up to date with the latest requiremen
 Thank you.
 The WordPress Theme Review Team', 'wporg-themes' ),
 				$this->theme->display( 'Name' ),
-				'https://themes.trac.wordpress.org/ticket/' . $ticket_id
+				'https://themes.trac.wordpress.org/ticket/' . $this->trac_ticket->id
 			);
 		}
 
@@ -1232,7 +1234,7 @@ The WordPress Theme Review Team', 'wporg-themes' ),
 	/**
 	 * Triggers a GitHub actions run for the upload.
 	 */
-	public function trigger_e2e_run( $ticket_id ) {
+	public function trigger_e2e_run() {
 		$api = GitHub::api(
 			'/repos/' . WPORG_THEMES_E2E_REPO . '/dispatches',
 			json_encode([
@@ -1246,8 +1248,8 @@ The WordPress Theme Review Team', 'wporg-themes' ),
 					'theme_slug'       => $this->theme_slug,
 					'theme_zip'        => "https://wordpress.org/themes/download/{$this->theme_slug}.{$this->theme->display( 'Version' )}.zip?nostats=1",
 					'accessible_ready' => in_array( 'accessibility-ready', $this->theme->get( 'Tags' ) ),
-					'trac_ticket_id'   => $ticket_id,
-					'trac_priority'    => $this->trac_ticket->priority,
+					'trac_ticket_id'   => $this->trac_ticket->id ?? 0,
+					'trac_priority'    => $this->trac_ticket->priority ?? '',
 				],
 			])
 		);
@@ -1513,8 +1515,7 @@ The WordPress Theme Review Team', 'wporg-themes' ),
 					[
 						'type' => 'mrkdwn',
 						'text' => "*Trac:*\n" . 
-							"<https://themes.trac.wordpress.org/ticket/{$this->trac_ticket->id}|#{$this->trac_ticket->id}>" .
-							' ' .
+							( $this->trac_ticket->id ? "<https://themes.trac.wordpress.org/ticket/{$this->trac_ticket->id}|#{$this->trac_ticket->id}> " : '' ) .
 							"<https://themes.trac.wordpress.org/changeset/{$this->trac_changeset}|[{$this->trac_changeset}]>",
 					]
 				] )
