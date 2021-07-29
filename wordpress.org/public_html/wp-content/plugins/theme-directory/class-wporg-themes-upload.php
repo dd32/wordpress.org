@@ -1423,7 +1423,7 @@ The WordPress Theme Review Team', 'wporg-themes' ),
 	public function log_to_slack( $status = 'allowed' ) {
 		global $themechecks;
 
-		if ( ! defined( 'THEME_DIRECTORY_SLACK_WEBHOOK' ) || empty( $themechecks ) ) {
+		if ( ! defined( 'THEME_DIRECTORY_SLACK_WEBHOOK' ) ) {
 			return;
 		}
 
@@ -1433,7 +1433,7 @@ The WordPress Theme Review Team', 'wporg-themes' ),
 			'recommended' => [],
 			'info'        => [],
 		);
-		foreach ( $themechecks as $check ) {
+		foreach ( $themechecks ?? [] as $check ) {
 			if ( $check instanceof themecheck ) {
 				$error = $check->getError();
 
@@ -1504,20 +1504,20 @@ The WordPress Theme Review Team', 'wporg-themes' ),
 						'type' => 'mrkdwn',
 						'text' => "*Version:*\n{$this->theme->get('Version')}",
 					],
-					[
+					! empty( $this->trac_ticket->priority ) ? [
 						'type' => 'mrkdwn',
 						'text' => "*Priority:*\n{$this->trac_ticket->priority}",
-					],
-					$this->trac_ticket->resolution ? [
+					] : null,
+					! empty( $this->trac_ticket->resolution ) ? [
 						'type' => 'mrkdwn',
 						'text' => "*Resolution:*\n{$this->trac_ticket->resolution}",
 					] : null,
-					[
+					( ! empty( $this->trac_ticket->id ) || ! empty( $this->trac_changeset ) ) ? [
 						'type' => 'mrkdwn',
 						'text' => "*Trac:*\n" . 
-							( $this->trac_ticket->id ? "<https://themes.trac.wordpress.org/ticket/{$this->trac_ticket->id}|#{$this->trac_ticket->id}> " : '' ) .
-							"<https://themes.trac.wordpress.org/changeset/{$this->trac_changeset}|[{$this->trac_changeset}]>",
-					]
+							( ! empty( $this->trac_ticket->id ) ? "<https://themes.trac.wordpress.org/ticket/{$this->trac_ticket->id}|#{$this->trac_ticket->id}> " : '' ) .
+							( ! empty( $this->trac_changeset ) ? "<https://themes.trac.wordpress.org/changeset/{$this->trac_changeset}|[{$this->trac_changeset}]>" : '' ),
+					] : null,
 				] )
 			];
 		} elseif ( $this->theme_post ) {
