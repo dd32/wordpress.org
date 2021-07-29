@@ -156,6 +156,120 @@ class WPORG_Themes_Upload {
 	}
 
 	/**
+	 * Process a theme update, from files that are already in SVN.
+	 *
+	 * @param string $slug    The theme slug to process. Must exist.
+	 * @param string $version The theme version to process. Must exist.
+	 * @return true|WP_Error See ::process_upload_from_directory() for error conditions.
+	 */
+	public function process_upload_from_svn( $slug, $version ) {
+		$this->theme_slug = $slug;
+
+		// Check out from SVN.
+		$this->create_tmp_dirs( $slug . '.' . $version );
+		$esc_svn = escapeshellarg( "https://themes.svn.wordpress.org/{$slug}/{$version}/" );
+		$this->exec_with_notify(
+			self::SVN . " export {$esc_svn} {$this->theme_dir} --force", // force as we've created the directory already.
+			$output,
+			$return_var
+		);
+		if ( $return_var ) {
+			return new WP_Error( 'svn_error', implode( "\n", $output ) );
+		}
+
+		if ( ! file_exists( $this->theme_dir . '/style.css' ) ) {
+			return new WP_Error( 'theme_error', 'Theme SVN structure appears invalid.' );
+		}
+
+		$theme = new WP_Theme( basename( $this->theme_dir ), dirname( $this->theme_dir ) );
+		if ( ! $theme->exists() || $version !== $theme->get( 'Version' ) ) {
+			return new WP_Error( 'invalid_version', 'The version in style.css does not match the SVN directory.' );
+		}
+
+		// Get the committer details.
+		$svn_info = [];
+		$output   = [];
+		$this->exec_with_notify( self::SVN . " info {$esc_svn}", $output, $return_var );
+		if ( ! $return_var && $output ) {
+			foreach ( $output as $line ) {
+				list( $key, $value ) = explode( ':', $line );
+				$svn_info[ trim( $key ) ] = trim( $value );
+			}
+		}
+
+		// Get the revision.
+		$this->trac_changeset = (int) $svn_info['Last Changed Rev'] ?? 0;
+
+		// Get the author.
+		if (
+			! empty( $svn_info['Last Changed Author'] ) &&
+			'themedropbox' !== $svn_info['Last Changed Author']
+		) {
+			$this->author = get_user_by( 'login', $svn_info['Last Changed Author'] );
+		}
+
+		return $this->process_upload_from_directory( $this->theme_dir, $slug );
+	}
+
+	/**
+	 * Process a theme update, from files in a directory.
+	 *
+	 * This assumes that the files within the directory are to be published, and has been added to SVN.
+	 *
+	 * @param string $directory The directory containing the theme files.
+	 * @param string $slug      The slug of the theme to update.
+	 * @return true|WP_Error true on success, WP_Error on failure.
+	 */
+	public function process_upload_from_directory( $directory, $slug ) {
+		$this->theme_dir  = $directory;
+		$this->theme_slug = $slug;
+
+		$theme_files = $this->get_all_files( $this->theme_dir );
+
+		// Do we have a stylesheet? Life is kind of pointless without.
+		$style_css = $this->get_style_css( $theme_files );
+		if ( ! $style_css ) {
+			return new WP_Error( 'missing_style.css' );
+		}
+
+		$this->readme     = $this->get_readme_data( $theme_files );
+		$this->theme      = new WP_Theme( basename( dirname( $style_css ) ), dirname( dirname( $style_css ) ) );
+		$this->theme_name = $this->theme->get( 'Name' );
+		$this->theme_post = $this->get_theme_post();
+		if ( ! $this->theme_post || ! $this->theme->exists() ) {
+			return new WP_Error( 'unknown_theme' );
+		}
+		if ( ! $this->author ) {
+			if ( is_user_logged_in() ) {
+				$this->author = wp_get_current_user();
+			} else {
+				$this->author = get_user_by( 'id', $this->theme_post->post_author );
+			}
+		}
+
+		// Make sure we have version that is higher than any previously uploaded version of this theme.
+		if ( ! version_compare( $this->theme->get( 'Version' ), $this->theme_post->max_version, '>' ) ) {
+			return new WP_Error( 'not_right_version' );
+		}
+
+		// Add a or update the Theme Directory entry for this theme.
+		$this->create_or_update_theme_post();
+
+		// Send theme author an email for peace of mind.
+		$this->send_email_notification();
+
+		do_action( 'theme_upload', $this->theme, $this->theme_post );
+
+		// Log it to slack.
+		$this->log_to_slack( 'allowed' );
+
+		// Initiate a GitHub actions run for the theme.
+		$this->trigger_e2e_run();
+
+		return true;
+	}
+
+	/**
 	 * Processes the theme upload.
 	 *
 	 * Runs various tests, creates Trac ticket, repopackage post, and saves the files to the SVN repo.
