@@ -1120,7 +1120,7 @@ TICKET;
 			'_requires'     => $this->sanitize_version_like_field( $this->theme->get( 'RequiresWP' ), 'requires' ),
 			'_requires_php' => $this->sanitize_version_like_field( $this->theme->get( 'RequiresPHP' ) ),
 			'_upload_date'  => $upload_date,
-			'_ticket_id'    => $$this->trac_ticket->id ?? 0,
+			'_ticket_id'    => $this->trac_ticket->id ?? 0,
 			'_screenshot'   => $this->theme->screenshot,
 		);
 
