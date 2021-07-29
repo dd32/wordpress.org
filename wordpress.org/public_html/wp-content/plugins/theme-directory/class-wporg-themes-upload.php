@@ -168,7 +168,7 @@ class WPORG_Themes_Upload {
 			return __( 'Error in file upload.', 'wporg-themes' );
 		}
 
-		$this->create_tmp_dirs( $file_upload['name'] );
+		$this->create_tmp_dirs( $file_upload['name'], true );
 		$this->unzip_package( $file_upload );
 
 		$theme_files = $this->get_all_files( $this->theme_dir );
@@ -463,7 +463,7 @@ class WPORG_Themes_Upload {
 	/**
 	 * Creates a temporary directory, and the theme dir within it.
 	 */
-	public function create_tmp_dirs( $base_name ) {
+	public function create_tmp_dirs( $base_name, $create_svn_tmp = false ) {
 		// Create a temporary directory if it doesn't exist yet.
 		$tmp = self::TMP;
 		if ( ! is_dir( $tmp ) ) {
@@ -484,11 +484,14 @@ class WPORG_Themes_Upload {
 		// Get a sanitized name for that theme and create a directory for it.
 		$base_name         = $this->get_sanitized_zip_name( $base_name );
 		$this->theme_dir   = "{$this->tmp_dir}/{$base_name}";
-		$this->tmp_svn_dir = "{$this->tmp_dir}/svn";
+		$this->tmp_svn_dir = "{$this->tmp_dir}/"; // Set it to something, just in case.
 		mkdir( $this->theme_dir );
-		mkdir( $this->tmp_svn_dir );
 		chmod( $this->theme_dir, 0777 );
-		chmod( $this->tmp_svn_dir, 0777 );
+		if ( $create_svn_tmp ) {
+			$this->tmp_svn_dir = "{$this->tmp_dir}/svn";
+			mkdir( $this->tmp_svn_dir );
+			chmod( $this->tmp_svn_dir, 0777 );
+		}
 
 		// Make sure we clean up after ourselves.
 		add_action( 'shutdown', array( $this, 'remove_files' ) );
