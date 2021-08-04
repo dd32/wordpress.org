@@ -132,6 +132,25 @@ class WPORG_Themes_Upload {
 	);
 
 	/**
+	 * Reset all class properties before each import, to avoid a situation
+	 * where multiple imports will use one anothers data.
+	 */
+	public function reset_properties() {
+		$this->author         = false;
+		$this->readme         = false;
+		$this->theme          = false;
+		$this->theme_post     = false;
+		$this->theme_slug     = false;
+		$this->theme_dir      = false;
+		$this->theme_name     = false;
+		$this->tmp_dir        = false;
+		$this->tmp_svn_dir    = false;
+		$this->trac_changeset = false;
+		$this->trac_ticket    = false;
+		// $this->trac = false; // This can stay active.
+	}
+
+	/**
 	 * Validate that a theme upload succeeded and was a valid file.
 	 */
 	public function validate_upload( $file ) {
@@ -170,6 +189,8 @@ class WPORG_Themes_Upload {
 	 * @return true|WP_Error See ::process_upload_from_directory() for error conditions.
 	 */
 	public function process_upload_from_svn( $slug, $version ) {
+		$this->reset_properties();
+
 		$this->theme_slug = $slug;
 
 		// Check out from SVN.
@@ -284,6 +305,8 @@ class WPORG_Themes_Upload {
 	 * @return string Failure or success message.
 	 */
 	public function process_upload( $file_upload ) {
+		$this->reset_properties();
+
 		$valid_upload = $this->validate_upload( $file_upload );
 		if ( ! $valid_upload ) {
 			return __( 'Error in file upload.', 'wporg-themes' );
