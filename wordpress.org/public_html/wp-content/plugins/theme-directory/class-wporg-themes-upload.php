@@ -47,77 +47,84 @@ class WPORG_Themes_Upload {
 	 *
 	 * @var string
 	 */
-	protected $tmp_dir;
+	public $tmp_dir;
 
 	/**
 	 * Path to a temporary SVN checkout directory.
 	 * 
 	 * @var string
 	 */
-	protected $tmp_svn_dir;
+	public $tmp_svn_dir;
 
 	/**
 	 * Path to temporary theme folder.
 	 *
 	 * @var string
 	 */
-	protected $theme_dir;
+	public $theme_dir;
 
 	/**
 	 * The uploaded theme.
 	 *
 	 * @var WP_Theme
 	 */
-	protected $theme;
+	public $theme;
+
+	/**
+	 * The theme slug being uploaded.
+	 *
+	 * @var string
+	 */
+	public $theme_slug;
 
 	/**
 	 * The theme post if it already exists in the repository.
 	 *
 	 * @var WP_Post
 	 */
-	protected $theme_post;
+	public $theme_post;
 
 	/**
 	 * The theme author (current user).
 	 *
 	 * @var WP_User
 	 */
-	protected $author;
+	public $author;
 
 	/**
 	 * The theme readme.txt data.
 	 *
 	 * @var array
 	 */
-	 protected $readme;
+	public $readme;
 
 	/**
 	 * Trac ticket information.
 	 *
 	 * @var object
 	 */
-	protected $trac_ticket;
+	public $trac_ticket;
 
 	/**
 	 * Trac changeset.
 	 * 
 	 * @var string
 	 */
-	protected $trac_changeset;
+	public $trac_changeset;
 
 	/**
 	 * A Trac instance to communicate with theme.trac.
 	 *
 	 * @var Trac
 	 */
-	protected $trac;
+	public $trac;
 
 	/**
 	 * The list of headers to extract from readme.txt.
 	 *
 	 * @var array
 	 */
-	protected $readme_header_fields = array(
+	public $readme_header_fields = array(
 		'tested'       => 'tested up to',
 		'contributors' => 'contributors',
 		'license'      => 'license',
@@ -1444,7 +1451,7 @@ The WordPress Theme Review Team', 'wporg-themes' ),
 	 * @param string $string The string to be converted.
 	 * @return string The converted string.
 	 */
-	protected function strip_non_utf8( $string ) {
+	public function strip_non_utf8( $string ) {
 		ini_set( 'mbstring.substitute_character', 'none' );
 
 		return mb_convert_encoding( $string, 'UTF-8', 'UTF-8' );
@@ -1457,7 +1464,7 @@ The WordPress Theme Review Team', 'wporg-themes' ),
 	 * @param string $b
 	 * @return int
 	 */
-	protected function sort_by_string_length( $a, $b ) {
+	public function sort_by_string_length( $a, $b ) {
 		return strlen( $b ) - strlen( $a );
 	}
 
