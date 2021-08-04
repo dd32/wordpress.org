@@ -143,7 +143,7 @@ class WPORG_Themes_Upload {
 		$this->theme_slug     = false;
 		$this->theme_dir      = false;
 		$this->theme_name     = false;
-		$this->tmp_dir        = false;
+		// $this->tmp_dir        = false; // This is a holding location for this script run, no need to make new ones each time.
 		$this->tmp_svn_dir    = false;
 		$this->trac_changeset = false;
 		$this->trac_ticket    = false;
