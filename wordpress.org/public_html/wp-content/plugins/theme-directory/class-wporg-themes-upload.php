@@ -1038,6 +1038,10 @@ TICKET;
 	public function create_or_update_trac_ticket() {
 		// Set up a way to communicate with Trac.
 		if ( empty( $this->trac ) ) {
+			if ( ! defined( 'THEME_TRACBOT_PASSWORD' ) ) {
+				return;
+			}
+
 			if ( ! class_exists( 'Trac' ) ) {
 				require_once ABSPATH . WPINC . '/class-IXR.php';
 				require_once ABSPATH . WPINC . '/class-wp-http-ixr-client.php';
