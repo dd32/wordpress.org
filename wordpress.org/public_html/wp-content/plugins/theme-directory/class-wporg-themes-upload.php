@@ -1399,7 +1399,7 @@ The WordPress Theme Review Team', 'wporg-themes' ),
 					"%s %s %s",
 					$this->theme->display( 'Name' ),
 					$this->theme->display( 'Version' ),
-					$this->trac_ticket->priority
+					$this->trac_ticket->priority ?? ''
 				),
 				'client_payload' => [
 					'theme_slug'       => $this->theme_slug,
