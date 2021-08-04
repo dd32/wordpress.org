@@ -237,7 +237,7 @@ class WPORG_Themes_Upload {
 		}
 
 		$result = $this->import( array(
-			'svn_commit'         => false,
+			'commit_to_svn'      => false,
 			'create_trac_ticket' => false,
 			'run_themecheck'     => false,
 		) );
@@ -272,7 +272,7 @@ class WPORG_Themes_Upload {
 		$this->unzip_package( $file_upload );
 
 		$result = $this->import( array(
-			'svn_commit'         => true,
+			'commit_to_svn'      => true,
 			'create_trac_ticket' => true,
 			'run_themecheck'     => true,
 		) );
