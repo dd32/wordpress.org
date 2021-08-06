@@ -29,6 +29,7 @@ include __DIR__ . '/query-modifications.php';
 // Load repo jobs.
 include __DIR__ . '/jobs/class-manager.php';
 include __DIR__ . '/jobs/class-trac-sync.php';
+include __DIR__ . '/jobs/class-svn-import.php';
 new WordPressdotorg\Theme_Directory\Jobs\Manager();
 
 // Load the GitHub API client.
@@ -663,7 +664,7 @@ add_action( 'wporg_themes_update_version_new', 'wporg_themes_rollback_version', 
  */
 function wporg_themes_update_wpthemescom( $theme_slug, $theme_version ) {
 	global $wporg_webs;
-	if ( ! $wporg_webs ) {
+	if ( empty( $wporg_webs ) || ! defined( 'THEME_PREVIEWS_SYNC_SECRET' ) ) {
 		return;
 	}
 
@@ -689,7 +690,7 @@ function wporg_themes_update_wpthemescom( $theme_slug, $theme_version ) {
  */
 function wporg_themes_remove_wpthemescom( $theme_slug ) {
 	global $wporg_webs;
-	if ( ! $wporg_webs ) {
+	if ( empty( $wporg_webs ) || ! defined( 'THEME_PREVIEWS_SYNC_SECRET' ) ) {
 		return;
 	}
 

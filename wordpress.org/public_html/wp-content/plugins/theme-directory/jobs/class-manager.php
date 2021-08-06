@@ -27,6 +27,12 @@ class Manager {
 
 		// A cronjob to check cronjobs.
 		add_action( 'theme_directory_check_cronjobs', [ $this, 'register_cron_tasks' ] );
+
+		// Add a job to constantly import updates from SVN.
+		if ( apply_filters( 'theme_directory_import_from_svn', false ) ) {
+			add_action( 'theme_directory_svn_import_watcher', [ __NAMESPACE__ . '\SVN_Import', 'watcher_trigger' ] );
+			add_action( 'theme_directory_svn_import', [ __NAMESPACE__ . '\SVN_Import', 'import_trigger' ] );
+		}
 	}
 
 	/**
@@ -58,6 +64,10 @@ class Manager {
 
 		if ( ! wp_next_scheduled( 'theme_directory_check_cronjobs' ) ) {
 			wp_schedule_event( time() + 60, 'every_15m', 'theme_directory_check_cronjobs' );
+		}
+
+		if ( ! wp_next_scheduled( 'theme_directory_svn_import_watcher' ) ) {
+			wp_schedule_event( time() + 60, 'every_15m', 'theme_directory_svn_import_watcher' );
 		}
 	}
 }
