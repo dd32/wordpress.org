@@ -31,6 +31,11 @@ class SVN_Import {
 
 		$current_revision = (int) trim( exec( 'svn info --show-item=revision https://themes.svn.wordpress.org/' ) );
 
+		// Don't need to parse anything if the revisions match.
+		if ( $last_revision >= $current_revision ) {
+			return;
+		}
+
 		$svn_xml = shell_exec( "svn log https://themes.svn.wordpress.org/ -v --xml -r {$last_revision}:{$current_revision}" );
 		$xml = new SimpleXMLElement( $svn_xml );
 		if ( ! $xml ) {
