@@ -184,11 +184,13 @@ class WPORG_Themes_Upload {
 	/**
 	 * Process a theme update, from files that are already in SVN.
 	 *
-	 * @param string $slug    The theme slug to process. Must exist.
-	 * @param string $version The theme version to process. Must exist.
+	 * @param string $slug      The theme slug to process. Must exist.
+	 * @param string $version   The theme version to process. Must exist.
+	 * @param int    $changeset The SVN revision if known. Optional.
+	 * @param string $author    The SVN author if known. Optional.
 	 * @return true|WP_Error See ::import() for error conditions.
 	 */
-	public function process_update_from_svn( $slug, $version ) {
+	public function process_update_from_svn( $slug, $version, $changeset = 0, $author = '' ) {
 		$this->reset_properties();
 
 		$this->theme_slug = $slug;
@@ -209,31 +211,27 @@ class WPORG_Themes_Upload {
 			return new WP_Error( 'theme_error', 'Theme SVN structure appears invalid.' );
 		}
 
-		$theme = new WP_Theme( basename( $this->theme_dir ), dirname( $this->theme_dir ) );
-		if ( ! $theme->exists() || $version !== $theme->get( 'Version' ) ) {
+		$theme_data = wporg_themes_get_header_data( $this->theme_dir . '/style.css' );
+		if ( ! $theme_data ) {
+			return new WP_Error( 'theme_error', 'Theme SVN structure appears invalid.' );
+		} elseif ( $version !== $theme_data['Version'] ) {
 			return new WP_Error( 'invalid_version', 'The version in style.css does not match the SVN directory.' );
 		}
 
-		// Get the committer details.
-		$svn_info = [];
-		$output   = [];
-		$this->exec_with_notify( self::SVN . " info {$esc_svn}", $output, $return_var );
-		if ( ! $return_var && $output ) {
-			foreach ( $output as $line ) {
-				list( $key, $value ) = explode( ':', $line );
-				$svn_info[ trim( $key ) ] = trim( $value );
-			}
+		// Fetch data from SVN if not known.
+		if ( ! $changeset ) {
+			$changeset = (int) trim( $this->exec_with_notify( self::SVN . " info --show-item=last-changed-revision {$esc_svn}" ) );
+		}
+		if ( ! $author ) {
+			$author = trim( $this->exec_with_notify( self::SVN . " info --show-item=last-changed-author {$esc_svn}" ) );
 		}
 
 		// Get the revision.
-		$this->trac_changeset = (int) $svn_info['Last Changed Rev'] ?? 0;
+		$this->trac_changeset = $changeset;
 
 		// Get the author.
-		if (
-			! empty( $svn_info['Last Changed Author'] ) &&
-			'themedropbox' !== $svn_info['Last Changed Author']
-		) {
-			$this->author = get_user_by( 'login', $svn_info['Last Changed Author'] );
+		if ( $author && 'themedropbox' !== $author ) {
+			$this->author = get_user_by( 'login', $author );
 		}
 
 		$result = $this->import( array(
