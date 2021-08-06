@@ -71,7 +71,7 @@ class SVN_Import {
 		$theme_changes = array_unique( $theme_changes, SORT_REGULAR );
 
 		foreach ( $theme_changes as $change ) {
-			wp_schedule_single_event( time(), 'theme_directory_svn_import', $change );
+			wp_schedule_single_event( time(), 'theme_directory_svn_import', array( $change ) );
 		}
 
 		update_option( 'svn_import_last_revision', $current_revision );
