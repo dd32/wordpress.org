@@ -36,6 +36,10 @@ class SVN_Import {
 			return;
 		}
 
+		// We don't need to include the details of the last revision next time we check for changes.
+		$last_revision++;
+
+		// Get the changes since then..
 		$svn_xml = shell_exec( "svn log https://themes.svn.wordpress.org/ -v --xml -r {$last_revision}:{$current_revision}" );
 		$xml = new SimpleXMLElement( $svn_xml );
 		if ( ! $xml ) {
@@ -64,7 +68,7 @@ class SVN_Import {
 
 			$info = compact( 'slug', 'version', 'changeset', 'author', 'msg' );
 
-			// Allow for skipping revisions based on external conditionals.
+			// Allow for including/skipping revisions based on external conditionals.
 			$should_import = 'themedropbox' !== $author;
 			if ( ! apply_filters( 'themes_svn_should_import', $should_import, $info ) ) {
 				return false;
