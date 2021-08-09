@@ -896,6 +896,11 @@ class WPORG_Themes_Upload {
 		// Load the theme checking code.
 		if ( ! function_exists( 'run_themechecks_against_theme' ) ) {
 			include_once WP_PLUGIN_DIR . '/theme-check/checkbase.php';
+
+			// If Theme Check still isn't loaded, just assume it's fine.
+			if ( ! function_exists( 'run_themechecks_against_theme' ) ) {
+				return true;
+			}
 		}
 
 		// Run the checks.
