@@ -235,9 +235,10 @@ class WPORG_Themes_Upload {
 		}
 
 		$result = $this->import( array(
-			'commit_to_svn'      => false,
-			'create_trac_ticket' => false,
-			'run_themecheck'     => false,
+			'commit_to_svn'       => false,
+			'create_trac_ticket'  => false,
+			'run_themecheck'      => true,
+			'block_on_themecheck' => false,
 		) );
 
 		// Error:
@@ -296,9 +297,10 @@ class WPORG_Themes_Upload {
 		$args = wp_parse_args(
 			$args,
 			array(
-				'commit_to_svn'      => true,    // Whether to commit the files to SVN.
-				'run_themecheck'     => true,    // Whether Theme Check should maybe block the import.
-				'create_trac_ticket' => true,    // Whether to create a Trac ticket for this import.
+				'commit_to_svn'       => true,    // Whether to commit the files to SVN.
+				'run_themecheck'      => true,    // Whether Theme Check should maybe block the import.
+				'block_on_themecheck' => true,    // Whether a failing Theme Check blocks the import.
+				'create_trac_ticket'  => true,    // Whether to create a Trac ticket for this import.
 			)
 		);
 
@@ -539,7 +541,7 @@ class WPORG_Themes_Upload {
 		if ( $args['run_themecheck'] ) {
 			$result = $this->check_theme( $theme_files );
 
-			if ( ! $result ) {
+			if ( ! $result && $args['block_on_themecheck'] ) {
 				// Log it to slack.
 				$this->log_to_slack( 'blocked' );
 
