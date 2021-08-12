@@ -15,7 +15,7 @@ add_action( 'pre_get_posts', __NAMESPACE__ . '\pre_get_posts' );
 add_filter( 'init', __NAMESPACE__ . '\add_rewrite' );
 
 add_filter( 'archive_template', __NAMESPACE__ . '\use_index_php_as_template' );
-add_action( 'template_redirect', __NAMESPACE__ . '\rewrite_search_url' );
+add_action( 'template_redirect', __NAMESPACE__ . '\rewrite_urls' );
 
 /**
  * Sets up theme defaults and registers support for various WordPress features.
@@ -85,6 +85,7 @@ function enqueue_assets() {
 				"var wporgPatternsData = JSON.parse( decodeURIComponent( '%s' ) )",
 				rawurlencode( wp_json_encode( array(
 					'userId' => get_current_user_id(),
+					'currentAuthorName' => esc_html( get_the_author_meta( 'display_name' ) ),
 				) ) ),
 			),
 			'before'
@@ -98,6 +99,7 @@ function enqueue_assets() {
 					'assets' => esc_url( get_stylesheet_directory_uri() ),
 					'site' => esc_url( home_url() ),
 					'login' => esc_url( wp_login_url() ),
+					'register' => esc_url( wp_registration_url() ),
 				) ) ),
 			),
 			'before'
@@ -177,7 +179,7 @@ function pre_get_posts( $query ) {
 	$pagename = $query->get( 'pagename' );
 	if ( $pagename ) {
 		list( $_pagename ) = explode( '/', $pagename );
-		if ( in_array( $_pagename, array( 'my-patterns', 'my-favorites' ) ) ) {
+		if ( in_array( $_pagename, array( 'my-patterns', 'favorites' ) ) ) {
 			// Need to get the page ID because this is set before `pre_get_posts` fires.
 			$page = get_page_by_path( $_pagename );
 			$query->set( 'pagename', $_pagename );
@@ -200,12 +202,15 @@ function pre_get_posts( $query ) {
 }
 
 /**
- * Add the "My Patterns" status rewrites.
- * This will redirect `my-patterns/draft`, `my-patterns/pending` etc to use the My Patterns page.
+ * Add rewrites needed for nested page navigation.
+ * - `my-patterns/<status>` will render the My Patterns page.
+ * - `favorites/categories/<cat>` will render the Favorites page.
+ * - `author/<username>/categories/<cat>` will render the author archive.
  */
 function add_rewrite() {
 	add_rewrite_rule( '^my-patterns/[^/]+/?$', 'index.php?pagename=my-patterns', 'top' );
-	add_rewrite_rule( '^my-favorites/.+/?$', 'index.php?pagename=my-favorites', 'top' );
+	add_rewrite_rule( '^favorites/.+/?$', 'index.php?pagename=favorites', 'top' );
+	add_rewrite_endpoint( 'categories', EP_AUTHORS );
 }
 
 
@@ -255,13 +260,20 @@ function get_all_the_content( $post ) {
 }
 
 /**
- * Rewrites the search url from s={keyword} to /search/{keyword}.
+ * Set up redirects for the site.
  *
  * @return void
  */
-function rewrite_search_url() {
+function rewrite_urls() {
+	// Redirect searches to `/search/term`.
 	if ( is_search() && ! empty( $_GET['s'] ) ) {
 		wp_redirect( home_url( '/search/' ) . urlencode( trim( get_query_var( 's' ) ) ) . '/' );
+		exit();
+	}
+	// Redirect old slug `my-favorites` to `favorites`, see WordPress/pattern-directory#332.
+	$path = str_replace( 'patterns/', '', trim( $_SERVER['REQUEST_URI'], '/' ) );
+	if ( preg_match( '/^my-favorites(.*)/', $path, $matches ) ) {
+		wp_redirect( home_url( '/favorites/' . $matches[1] . '/' ) );
 		exit();
 	}
 }

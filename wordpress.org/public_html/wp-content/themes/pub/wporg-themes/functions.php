@@ -62,6 +62,29 @@ function wporg_themes_canonical_redirects() {
 		die();
 	}
 
+	// Searches should be redirected to canonical location.
+	if ( isset( $_GET['s'] ) ) {
+		wp_safe_redirect( home_url( '/search/' . urlencode( get_query_var( 's' ) ) . '/' ), 301 );
+		die();
+	}
+
+	// Handle 404 pages where it's a singular theme followed by junk, for example, /themes/twentyten/junk/input/
+	if ( is_404() ) {
+		$path = parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH );
+		if ( preg_match( '!^/themes/([^/]+)/.+!i', $path, $m ) ) {
+			$posts = get_posts( [
+				'name'        => $m[1],
+				'post_type'   => 'repopackage',
+				'post_status' => 'publish'
+			] );
+
+			if ( $posts ) {
+				wp_safe_redirect( get_permalink( $posts[0] ), 301 );
+				die();
+			}
+		}
+	}
+
 	// Uppercase characters in URLs tend to lead to broken JS pages.
 	// Redirect all paths to the lower-case variant, excluding searches..
 	$path = parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH );
@@ -365,6 +388,7 @@ function wporg_themes_get_feature_list( $include = 'active' ) {
 				'post-formats'          => __( 'Post Formats', 'wporg-themes' ),
 				'rtl-language-support'  => __( 'RTL Language Support', 'wporg-themes' ),
 				'sticky-post'           => __( 'Sticky Post', 'wporg-themes' ),
+				'template-editing'      => __( 'Template Editing', 'wporg-themes' ),
 				'theme-options'         => __( 'Theme Options', 'wporg-themes' ),
 				'threaded-comments'     => __( 'Threaded Comments', 'wporg-themes' ),
 				'translation-ready'     => __( 'Translation Ready', 'wporg-themes' ),
