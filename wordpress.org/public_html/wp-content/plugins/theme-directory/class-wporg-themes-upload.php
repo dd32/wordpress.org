@@ -47,84 +47,84 @@ class WPORG_Themes_Upload {
 	 *
 	 * @var string
 	 */
-	public $tmp_dir;
+	protected $tmp_dir;
 
 	/**
 	 * Path to a temporary SVN checkout directory.
 	 * 
 	 * @var string
 	 */
-	public $tmp_svn_dir;
+	protected $tmp_svn_dir;
 
 	/**
 	 * Path to temporary theme folder.
 	 *
 	 * @var string
 	 */
-	public $theme_dir;
+	protected $theme_dir;
 
 	/**
 	 * The uploaded theme.
 	 *
 	 * @var WP_Theme
 	 */
-	public $theme;
+	protected $theme;
 
 	/**
 	 * The theme slug being uploaded.
 	 *
 	 * @var string
 	 */
-	public $theme_slug;
+	protected $theme_slug;
 
 	/**
 	 * The theme post if it already exists in the repository.
 	 *
 	 * @var WP_Post
 	 */
-	public $theme_post;
+	protected $theme_post;
 
 	/**
 	 * The theme author (current user).
 	 *
 	 * @var WP_User
 	 */
-	public $author;
+	protected $author;
 
 	/**
 	 * The theme readme.txt data.
 	 *
 	 * @var array
 	 */
-	public $readme;
+	protected $readme;
 
 	/**
 	 * Trac ticket information.
 	 *
 	 * @var object
 	 */
-	public $trac_ticket;
+	protected $trac_ticket;
 
 	/**
 	 * Trac changeset.
 	 * 
 	 * @var string
 	 */
-	public $trac_changeset;
+	protected $trac_changeset;
 
 	/**
 	 * A Trac instance to communicate with theme.trac.
 	 *
 	 * @var Trac
 	 */
-	public $trac;
+	protected $trac;
 
 	/**
 	 * The list of headers to extract from readme.txt.
 	 *
 	 * @var array
 	 */
-	public $readme_header_fields = array(
+	protected $readme_header_fields = array(
 		'tested'       => 'tested up to',
 		'contributors' => 'contributors',
 		'license'      => 'license',
@@ -135,7 +135,7 @@ class WPORG_Themes_Upload {
 	 * Reset all class properties before each import, to avoid a situation
 	 * where multiple imports will use one anothers data.
 	 */
-	public function reset_properties() {
+	protected function reset_properties() {
 		$this->author         = false;
 		$this->readme         = false;
 		$this->theme          = false;
@@ -1492,7 +1492,7 @@ The WordPress Theme Review Team', 'wporg-themes' ),
 	 * @param string $string The string to be converted.
 	 * @return string The converted string.
 	 */
-	public function strip_non_utf8( $string ) {
+	protected function strip_non_utf8( $string ) {
 		ini_set( 'mbstring.substitute_character', 'none' );
 
 		return mb_convert_encoding( $string, 'UTF-8', 'UTF-8' );
@@ -1505,7 +1505,7 @@ The WordPress Theme Review Team', 'wporg-themes' ),
 	 * @param string $b
 	 * @return int
 	 */
-	public function sort_by_string_length( $a, $b ) {
+	protected function sort_by_string_length( $a, $b ) {
 		return strlen( $b ) - strlen( $a );
 	}
 
