@@ -47,7 +47,7 @@ function wporg_themes_render_upload_shortcode() {
 	if ( ! empty( $_POST['_wpnonce'] ) && wp_verify_nonce( $_POST['_wpnonce'], 'wporg-themes-upload' ) && 'upload' === $_POST['action'] ) {
 		$messages = wporg_themes_process_upload();
 
-		$notice_content = "";
+		$notice_content = '';
 
 		if ( is_wp_error( $messages ) ) {
 			foreach ( $messages->get_error_codes() as $code ) {
