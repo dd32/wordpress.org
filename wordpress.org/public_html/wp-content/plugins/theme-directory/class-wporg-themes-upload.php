@@ -283,7 +283,7 @@ class WPORG_Themes_Upload {
 		/* translators: 1: theme name, 2: Trac ticket URL */
 		return sprintf( __( 'Thank you for uploading %1$s to the WordPress Theme Directory. We&rsquo;ve sent you an email verifying that we&rsquo;ve received it. Feedback will be provided at <a href="%2$s">%2$s</a>', 'wporg-themes' ),
 			$this->theme->display( 'Name' ),
-			esc_url( 'https://themes.trac.wordpress.org/ticket/' . $ticket_id )
+			esc_url( 'https://themes.trac.wordpress.org/ticket/' . $this->trac_ticket->id )
 		);
 	}
 
