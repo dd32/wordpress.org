@@ -271,9 +271,10 @@ class WPORG_Themes_Upload {
 		$this->unzip_package( $file_upload );
 
 		$result = $this->import( array(
-			'commit_to_svn'      => true,
-			'create_trac_ticket' => true,
-			'run_themecheck'     => true,
+			'commit_to_svn'       => true,
+			'create_trac_ticket'  => true,
+			'run_themecheck'      => true,
+			'block_on_themecheck' => true,
 		) );
 
 		// Error:
@@ -303,6 +304,14 @@ class WPORG_Themes_Upload {
 				'create_trac_ticket'  => true,    // Whether to create a Trac ticket for this import.
 			)
 		);
+
+		// When running locally, certain actions cannot be performed.
+		if ( ! defined( 'THEME_TRACBOT_PASSWORD' ) || ! THEME_TRACBOT_PASSWORD ) {
+			$args['create_trac_ticket'] = false;
+		}
+		if ( ! defined( 'THEME_DROPBOX_PASSWORD' ) || ! THEME_DROPBOX_PASSWORD ) {
+			$args['commit_to_svn'] = false;
+		}
 
 		$theme_files = $this->get_all_files( $this->theme_dir );
 
