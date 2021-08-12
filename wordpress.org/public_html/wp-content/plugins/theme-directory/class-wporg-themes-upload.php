@@ -241,7 +241,6 @@ class WPORG_Themes_Upload {
 			'block_on_themecheck' => false,
 		) );
 
-		// Error:
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
@@ -277,7 +276,6 @@ class WPORG_Themes_Upload {
 			'block_on_themecheck' => true,
 		) );
 
-		// Error:
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
@@ -290,11 +288,11 @@ class WPORG_Themes_Upload {
 	}
 
 	/**
-	 * Processes a theme import, from SVN or ZIP.
+	 * Processes a theme import.
 	 *
 	 * @return WP_Error|true Error object on failure, true on success.
 	 */
-	public function import( $args = array() ) {
+	protected function import( $args = array() ) {
 		$args = wp_parse_args(
 			$args,
 			array(
@@ -600,8 +598,6 @@ class WPORG_Themes_Upload {
 					'<a href="mailto:themes@wordpress.org">themes@wordpress.org</a>'
 				);
 			}
-
-			$this->trac_ticket->id = $ticket_id;
 
 		}
 
@@ -1138,6 +1134,8 @@ TICKET;
 			}
 
 		}
+
+		$this->trac_ticket->id = $ticket_id;
 
 		return $ticket_id;
 	}
