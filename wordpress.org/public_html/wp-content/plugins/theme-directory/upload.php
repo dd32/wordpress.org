@@ -82,18 +82,24 @@ function wporg_themes_render_upload_shortcode() {
  */
 function wporg_themes_process_upload( ) {
 	if ( ! is_user_logged_in() ) {
-		return new WP_Error( 'not_logged_in', __( 'You must be logged in to upload a new theme.', 'wporg-themes' ) );
+		return new WP_Error(
+			'not_logged_in',
+			__( 'You must be logged in to upload a new theme.', 'wporg-themes' )
+		);
 	}
 
 	if ( empty( $_FILES['zip_file'] ) ) {
-		return new WP_Error( 'no_upload', __( 'Error in file upload.', 'wporg-themes' ) );
+		return new WP_Error(
+			'no_upload',
+			__( 'Error in file upload.', 'wporg-themes' )
+		);
 	}
 
 	if ( ! class_exists( 'WPORG_Themes_Upload' ) ) {
-		include_once plugin_dir_path( __FILE__ ) . 'class-wporg-themes-upload.php';
+		include_once __DIR__ . '/class-wporg-themes-upload.php';
 	}
 
-	$upload = new WPORG_Themes_Upload;
+	$upload  = new WPORG_Themes_Upload;
 	$message = $upload->process_upload( $_FILES['zip_file'] );
 
 	return $message;
