@@ -51,19 +51,18 @@ function wporg_themes_render_upload_shortcode() {
 	if ( ! empty( $_POST['_wpnonce'] ) && wp_verify_nonce( $_POST['_wpnonce'], 'wporg-themes-upload' ) && 'upload' === $_POST['action'] ) {
 		$messages = wporg_themes_process_upload();
 
-		if ( ! empty( $messages ) ) {
-			$notice_content = "";
+		$notice_content = "";
 
-			if ( is_array( $messages ) ) {
-				foreach ( $messages as $message){
-					$notice_content .= "<li>{$message}</li>";
-				}
-			} else {
-				$notice_content = "<li>{$messages}</li>";
+		if ( is_wp_error( $messages ) ) {
+			foreach ( $messages->get_error_codes() as $code ) {
+				$message         = $messages->get_error_message( $code );
+				$notice_content .= "<li class='error-code-{$code}'>{$message}</li>";
 			}
-
-			$notice = "<div class='notice notice-warning notice-large'><ul>{$notice_content}</ul></div>";
+		} else {
+			$notice_content = "<li>{$messages}</li>";
 		}
+
+		$notice = "<div class='notice notice-warning notice-large'><ul>{$notice_content}</ul></div>";
 	}
 
 	$form = '<h2>' . __( 'Select your zipped theme file', 'wporg-themes' ) . '</h2>
@@ -83,15 +82,15 @@ function wporg_themes_render_upload_shortcode() {
 /**
  * Runs basic checks and hands off to the upload processor.
  *
- * @return string Failure or success message.
+ * @return WP_Error|string Failure or success message.
  */
 function wporg_themes_process_upload( ) {
 	if ( ! is_user_logged_in() ) {
-		return __( 'You must be logged in to upload a new theme.', 'wporg-themes' );
+		return new WP_Error( 'not_logged_in', __( 'You must be logged in to upload a new theme.', 'wporg-themes' ) );
 	}
 
 	if ( empty( $_FILES['zip_file'] ) ) {
-		return __( 'Error in file upload.', 'wporg-themes' );
+		return new WP_Error( 'no_upload', __( 'Error in file upload.', 'wporg-themes' ) );
 	}
 
 	if ( ! class_exists( 'WPORG_Themes_Upload' ) ) {
