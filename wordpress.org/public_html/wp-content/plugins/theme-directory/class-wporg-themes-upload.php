@@ -1440,18 +1440,18 @@ TICKET;
 	 * Sends out an email confirmation to the theme's author.
 	 */
 	public function send_email_notification() {
+		if ( 'live' === $this->version_status ) {
+			// Do nothing. The update has been set as live. No need to let them know it's been uploaded.
+			// wporg_themes_approve_version() will send a "Congratulations! It's live!" email momentarily.
+			return;
+		}
+
+		// If a Trac ticket wasn't created for this import, there's nothing to email about.
+		if ( ! $this->trac_ticket->id ) {
+			return;
+		}
+
 		if ( ! empty( $this->theme_post ) ) {
-
-			if ( 'live' === $this->version_status ) {
-				// Do nothing. The update has been set as live. No need to let them know it's been uploaded.
-				// wporg_themes_approve_version() will send a "Congratulations! It's live!" email momentarily.
-				return;
-			}
-
-			if ( ! $this->trac_ticket->id ) {
-				return;
-			}
-
 			/* translators: 1: theme name, 2: theme version */
 			$email_subject = sprintf( __( '[WordPress Themes] %1$s, new version %2$s', 'wporg-themes' ),
 				$this->theme->display( 'Name' ),
