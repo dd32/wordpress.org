@@ -44,7 +44,11 @@ function wporg_themes_render_upload_shortcode() {
 
 	$notice = '';
 
-	if ( ! empty( $_POST['_wpnonce'] ) && wp_verify_nonce( $_POST['_wpnonce'], 'wporg-themes-upload' ) && 'upload' === $_POST['action'] ) {
+	if (
+		! empty( $_POST['_wpnonce'] ) &&
+		wp_verify_nonce( $_POST['_wpnonce'], 'wporg-themes-upload' ) &&
+		'upload' === $_POST['action']
+	) {
 		$messages = wporg_themes_process_upload();
 
 		$notice_content = '';
@@ -90,7 +94,7 @@ function wporg_themes_process_upload( ) {
 
 	if ( empty( $_FILES['zip_file'] ) ) {
 		return new WP_Error(
-			'no_upload',
+			'invalid_upload',
 			__( 'Error in file upload.', 'wporg-themes' )
 		);
 	}

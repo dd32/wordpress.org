@@ -387,8 +387,9 @@ class WPORG_Themes_Upload {
 		if ( ! $this->theme_name || ! $this->theme_slug ) {
 			$error = __( 'The theme has no name.', 'wporg-themes' ) . ' ';
 
-			/* translators: 1: comment header line, 2: style.css, 3: wporg URL */
-			$error .= sprintf( __( 'Add a %1$s line to your %2$s file and upload the theme again. <a href="%3$s">Theme Style Sheets</a>', 'wporg-themes' ),
+			$error .= sprintf(
+				/* translators: 1: comment header line, 2: style.css, 3: wporg URL */
+				__( 'Add a %1$s line to your %2$s file and upload the theme again. <a href="%3$s">Theme Style Sheets</a>', 'wporg-themes' ),
 				'<code>Theme Name:</code>',
 				'<code>style.css</code>',
 				__( 'https://developer.wordpress.org/themes/basics/main-stylesheet-style-css/', 'wporg-themes' )
