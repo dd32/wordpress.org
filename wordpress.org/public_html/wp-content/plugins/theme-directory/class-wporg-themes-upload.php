@@ -108,7 +108,7 @@ class WPORG_Themes_Upload {
 	/**
 	 * Trac changeset.
 	 * 
-	 * @var string
+	 * @var int
 	 */
 	protected $trac_changeset;
 
@@ -143,11 +143,12 @@ class WPORG_Themes_Upload {
 		$this->theme_slug     = false;
 		$this->theme_dir      = false;
 		$this->theme_name     = false;
-		// $this->tmp_dir        = false; // This is a holding location for this script run, no need to make new ones each time.
 		$this->tmp_svn_dir    = false;
 		$this->trac_changeset = false;
 		$this->trac_ticket    = false;
-		// $this->trac = false; // This can stay active.
+
+		// $this->tmp_dir = false; // Temporary folder per each instance of this class. Doesn't need to be reset each time.
+		// $this->trac    = false; // This can stay active, Trac access won't change between calls.
 	}
 
 	/**
@@ -284,12 +285,7 @@ class WPORG_Themes_Upload {
 		$this->create_tmp_dirs( $file_upload['name'], true );
 		$this->unzip_package( $file_upload );
 
-		$result = $this->import( array(
-			'commit_to_svn'       => true,
-			'create_trac_ticket'  => true,
-			'run_themecheck'      => true,
-			'block_on_themecheck' => true,
-		) );
+		$result = $this->import();
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -312,10 +308,14 @@ class WPORG_Themes_Upload {
 		$args = wp_parse_args(
 			$args,
 			array(
-				'commit_to_svn'       => true,    // Whether to commit the files to SVN.
-				'run_themecheck'      => true,    // Whether Theme Check should maybe block the import.
-				'block_on_themecheck' => true,    // Whether a failing Theme Check blocks the import.
-				'create_trac_ticket'  => true,    // Whether to create a Trac ticket for this import.
+				// Whether to commit the files to SVN.
+				'commit_to_svn'       => true,
+				// Whether Theme Check should maybe block the import.
+				'run_themecheck'      => true,
+				// Whether a failing Theme Check blocks the import.
+				'block_on_themecheck' => true,
+				// Whether to create a Trac ticket for this import.
+				'create_trac_ticket'  => true,
 			)
 		);
 
@@ -417,10 +417,12 @@ class WPORG_Themes_Upload {
 		}
 
 		// Populate author.
-		if ( ! $this->author && is_user_logged_in() ) {
-			$this->author = wp_get_current_user();
-		} elseif ( ! $this->author && $this->theme_post ) {
-			$this->author = get_user_by( 'id', $this->theme_post->post_author );
+		if ( ! $this->author ) {
+			if ( is_user_logged_in() ) {
+				$this->author = wp_get_current_user();
+			} elseif ( $this->theme_post ) {
+				$this->author = get_user_by( 'id', $this->theme_post->post_author );
+			}
 		}
 
 		// Make sure it doesn't use a slug deemed not to be used by the public.
@@ -495,7 +497,11 @@ class WPORG_Themes_Upload {
 		// Prevent duplicate URLs.
 		$themeuri = $this->theme->get( 'ThemeURI' );
 		$authoruri = $this->theme->get( 'AuthorURI' );
-		if ( ! empty( $themeuri ) && ! empty( $authoruri ) && $themeuri == $authoruri ) {
+		if (
+			! empty( $themeuri ) &&
+			! empty( $authoruri ) &&
+			$themeuri == $authoruri
+		) {
 			$style_errors->add(
 				'duplicate_uris',
 				__( 'Duplicate theme and author URLs. A theme URL is a page/site that provides details about this specific theme. An author URL is a page/site that provides information about the author of the theme. You aren&rsquo;t required to provide both, so pick the one that best applies to your URL.', 'wporg-themes' )
@@ -503,7 +509,11 @@ class WPORG_Themes_Upload {
 		}
 
 		// Check for child theme's parent in the directory (non-buddypress only)
-		if ( $this->theme->parent() && ! in_array( 'buddypress', $this->theme->get( 'Tags' ) ) && ! $this->is_parent_available() ) {
+		if (
+			$this->theme->parent() &&
+			! in_array( 'buddypress', $this->theme->get( 'Tags' ) ) &&
+			! $this->is_parent_available()
+		) {
 			$style_errors->add(
 				'invalid_parent',
 				sprintf(
@@ -525,7 +535,11 @@ class WPORG_Themes_Upload {
 			);
 
 		// Is there already a theme with the name name by a different author?
-		if ( ! empty( $this->theme_post ) && ! empty( $this->author ) && $this->theme_post->post_author != $this->author->ID ) {
+		if (
+			! empty( $this->theme_post ) &&
+			! empty( $this->author ) &&
+			$this->theme_post->post_author != $this->author->ID
+		) {
 
 			$is_allowed_to_upload_for_theme = false;
 			if (
@@ -552,7 +566,10 @@ class WPORG_Themes_Upload {
 		}
 
 		// Check if the ThemeURI is already in use by another theme by another author.
-		if ( empty( $this->theme_post ) && ! empty( $themeuri ) ) {
+		if (
+			empty( $this->theme_post ) &&
+			! empty( $themeuri )
+		) {
 			$theme_uri_matches = get_posts( [
 				'post_type'        => 'repopackage',
 				'post_status'      => 'publish',
@@ -580,7 +597,10 @@ class WPORG_Themes_Upload {
 		}
 
 		// We know it's the correct author, now we can check if it's suspended.
-		if ( ! empty( $this->theme_post ) && 'suspend' === $this->theme_post->post_status ) {
+		if (
+			! empty( $this->theme_post ) &&
+			'suspend' === $this->theme_post->post_status
+		) {
 			$style_errors->add(
 				'suspended',
 				sprintf(
@@ -592,7 +612,10 @@ class WPORG_Themes_Upload {
 		}
 
 		// Make sure we have version that is higher than any previously uploaded version of this theme. This check happens last to allow the non-author blocks to kick in.
-		if ( ! empty( $this->theme_post ) && ! version_compare( $this->theme->get( 'Version' ), $this->theme_post->max_version, '>' ) ) {
+		if (
+			! empty( $this->theme_post ) &&
+			! version_compare( $this->theme->get( 'Version' ), $this->theme_post->max_version, '>' )
+		) {
 			$style_errors->add(
 				'invalid_version',
 				sprintf(
@@ -610,9 +633,9 @@ class WPORG_Themes_Upload {
 			return $style_errors;
 		}
 
-		// Don't send special themes through Theme Check.
+		// Don't block special themes based on Theme Check.
 		if ( has_category( 'special-case-theme', $this->theme_post ) ) {
-			$args['run_themecheck'] = false;
+			$args['block_on_themecheck'] = false;
 		}
 
 		// Pass it through Theme Check and see how great this theme really is.
@@ -638,8 +661,8 @@ class WPORG_Themes_Upload {
 		// Passed all tests!
 		// Let's save everything and get things wrapped up.
 
+		// Create a new version in SVN.
 		if ( $args['commit_to_svn'] ) {
-			// Create a new version in SVN.
 			$result = $this->add_to_svn();
 			if ( ! $result ) {
 				return new WP_Error(
@@ -653,6 +676,7 @@ class WPORG_Themes_Upload {
 			}
 		}
 
+		// Create a Trac ticket for this theme version.
 		if ( $args['create_trac_ticket'] ) {
 			// Get all Trac ticket information set up.
 			$this->prepare_trac_ticket();
@@ -984,8 +1008,12 @@ class WPORG_Themes_Upload {
 		if ( ! function_exists( 'run_themechecks_against_theme' ) ) {
 			include_once WP_PLUGIN_DIR . '/theme-check/checkbase.php';
 
-			// If Theme Check still isn't loaded, just assume it's fine.
+			// If Theme Check isn't loaded, assume it's fine.
 			if ( ! function_exists( 'run_themechecks_against_theme' ) ) {
+				global $themechecks;
+				// Set the theme checks to an empty list to avoid notices when not available.
+				$themechecks = array();
+
 				return true;
 			}
 		}
@@ -1171,7 +1199,10 @@ TICKET;
 		}
 
 		// If there's a previous version and the most current version's status is `new`, we update.
-		if ( ! empty( $this->theme_post->max_version ) && 'new' == $this->theme_post->_status[ $this->theme_post->max_version ] ) {
+		if (
+			! empty( $this->theme_post->max_version ) &&
+			'new' == $this->theme_post->_status[ $this->theme_post->max_version ]
+		) {
 			$ticket_id = (int) $this->theme_post->_ticket_id[ $this->theme_post->max_version ];
 			$ticket    = $this->trac->ticket_get( $ticket_id );
 
@@ -1274,13 +1305,16 @@ TICKET;
 
 		// Discard versions that are awaiting review, and maybe set this upload as live.
 		$version_status = 'new';
-		if ( ! empty( $this->trac_ticket->resolution ) && 'live' === $this->trac_ticket->resolution ) {
+		if (
+			! empty( $this->trac_ticket->resolution ) &&
+			'live' === $this->trac_ticket->resolution
+		) {
 			$version_status = 'live';
 		}
 		wporg_themes_update_version_status( $post_id, $this->theme->get( 'Version' ), $version_status );
 
+		// refresh the post to avoid stale data.
 		if ( $post_id ) {
-			// refresh it.
 			$this->theme_post = $this->get_theme_post();
 		}
 	}
@@ -1487,7 +1521,10 @@ The WordPress Theme Review Team', 'wporg-themes' ),
 
 		// If the uploader and the author are different, email them both.
 		// This only happens under special circumstances.
-		if ( ! empty( $this->theme_post ) && $this->theme_post->post_author != $this->author->ID ) {
+		if (
+			! empty( $this->theme_post ) &&
+			$this->theme_post->post_author != $this->author->ID
+		) {
 			$emails[] = get_user_by( 'id', $this->theme_post->post_author )->user_email;
 		}
 
