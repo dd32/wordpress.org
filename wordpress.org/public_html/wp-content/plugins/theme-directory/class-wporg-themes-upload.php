@@ -1542,14 +1542,14 @@ The WordPress Theme Review Team', 'wporg-themes' ),
 					"%s %s %s",
 					$this->theme->display( 'Name' ),
 					$this->theme->display( 'Version' ),
-					$this->trac_ticket->priority ?? ''
+					$this->trac_ticket->priority
 				),
 				'client_payload' => [
 					'theme_slug'       => $this->theme_slug,
 					'theme_zip'        => "https://wordpress.org/themes/download/{$this->theme_slug}.{$this->theme->display( 'Version' )}.zip?nostats=1",
 					'accessible_ready' => in_array( 'accessibility-ready', $this->theme->get( 'Tags' ) ),
-					'trac_ticket_id'   => $this->trac_ticket->id ?? 0,
-					'trac_priority'    => $this->trac_ticket->priority ?? '',
+					'trac_ticket_id'   => $this->trac_ticket->id,
+					'trac_priority'    => $this->trac_ticket->priority,
 				],
 			])
 		);
