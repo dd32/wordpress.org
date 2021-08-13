@@ -120,6 +120,13 @@ class WPORG_Themes_Upload {
 	protected $trac;
 
 	/**
+	 * Theme import status, what the status of this theme version is.
+	 *
+	 * @var string
+	 */
+	protected $version_status = 'new';
+
+	/**
 	 * The list of headers to extract from readme.txt.
 	 *
 	 * @var array
@@ -155,6 +162,7 @@ class WPORG_Themes_Upload {
 			'diff_line'   => '',
 			'description' => '',
 		);
+		$this->version_status = 'new';
 
 		// $this->tmp_dir = '';    // Temporary folder per each instance of this class. Doesn't need to be reset each time.
 		// $this->trac    = false; // This can stay active, Trac access won't change between calls.
@@ -256,6 +264,9 @@ class WPORG_Themes_Upload {
 			$this->author = get_user_by( 'login', $author );
 		}
 
+		// The version should be set live as it's from SVN.
+		$this->version_status = 'live';
+
 		$result = $this->import( array(
 			'commit_to_svn'       => false,
 			'create_trac_ticket'  => false,
@@ -266,9 +277,6 @@ class WPORG_Themes_Upload {
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
-
-		// Update this version to be live, since it came directly from SVN.
-		wporg_themes_update_version_status( $this->theme_post->ID, $this->theme->get( 'Version' ), 'live' );
 
 		return true;
 	}
@@ -1239,6 +1247,7 @@ TICKET;
 				$this->trac->ticket_update( $ticket_id, 'Theme Update for existing Live theme - automatically reviewed & approved', array( 'action' => 'new_no_review' ), false );
 
 				$this->trac_ticket->resolution = 'live';
+				$this->version_status          = 'live';
 			}
 
 		}
@@ -1305,11 +1314,7 @@ TICKET;
 		}
 
 		// Discard versions that are awaiting review, and maybe set this upload as live.
-		$version_status = 'new';
-		if ( 'live' === $this->trac_ticket->resolution ) {
-			$version_status = 'live';
-		}
-		wporg_themes_update_version_status( $post_id, $this->theme->get( 'Version' ), $version_status );
+		wporg_themes_update_version_status( $post_id, $this->theme->get( 'Version' ), $this->version_status );
 
 		// refresh the post to avoid stale data.
 		if ( $post_id ) {
