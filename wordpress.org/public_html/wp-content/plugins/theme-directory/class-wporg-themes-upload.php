@@ -47,21 +47,21 @@ class WPORG_Themes_Upload {
 	 *
 	 * @var string
 	 */
-	protected $tmp_dir;
+	protected $tmp_dir = '';
 
 	/**
 	 * Path to a temporary SVN checkout directory.
 	 * 
 	 * @var string
 	 */
-	protected $tmp_svn_dir;
+	protected $tmp_svn_dir = '';
 
 	/**
 	 * Path to temporary theme folder.
 	 *
 	 * @var string
 	 */
-	protected $theme_dir;
+	protected $theme_dir = '';
 
 	/**
 	 * The uploaded theme.
@@ -75,7 +75,7 @@ class WPORG_Themes_Upload {
 	 *
 	 * @var string
 	 */
-	protected $theme_slug;
+	protected $theme_slug = '';
 
 	/**
 	 * The theme post if it already exists in the repository.
@@ -96,7 +96,7 @@ class WPORG_Themes_Upload {
 	 *
 	 * @var array
 	 */
-	protected $readme;
+	protected $readme = array();
 
 	/**
 	 * Trac ticket information.
@@ -110,7 +110,7 @@ class WPORG_Themes_Upload {
 	 * 
 	 * @var int
 	 */
-	protected $trac_changeset;
+	protected $trac_changeset = 0;
 
 	/**
 	 * A Trac instance to communicate with theme.trac.
@@ -137,13 +137,13 @@ class WPORG_Themes_Upload {
 	 */
 	protected function reset_properties() {
 		$this->author         = false;
-		$this->readme         = false;
+		$this->readme         = array();
 		$this->theme          = false;
 		$this->theme_post     = false;
-		$this->theme_slug     = false;
-		$this->theme_dir      = false;
-		$this->theme_name     = false;
-		$this->tmp_svn_dir    = false;
+		$this->theme_slug     = '';
+		$this->theme_dir      = '';
+		$this->theme_name     = '';
+		$this->tmp_svn_dir    = '';
 		$this->trac_changeset = 0;
 		$this->trac_ticket    = (object) array(
 			'id'          => 0,
@@ -156,7 +156,7 @@ class WPORG_Themes_Upload {
 			'description' => '',
 		);
 
-		// $this->tmp_dir = false; // Temporary folder per each instance of this class. Doesn't need to be reset each time.
+		// $this->tmp_dir = '';    // Temporary folder per each instance of this class. Doesn't need to be reset each time.
 		// $this->trac    = false; // This can stay active, Trac access won't change between calls.
 	}
 
