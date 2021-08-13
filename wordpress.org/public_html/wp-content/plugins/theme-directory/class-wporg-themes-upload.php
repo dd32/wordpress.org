@@ -1056,7 +1056,6 @@ class WPORG_Themes_Upload {
 	 * Sets up all Trac ticket information that we need later.
 	 */
 	public function prepare_trac_ticket() {
-		// todo - check trac xml-rpc, maybe data needs to be escaped before sending it there.
 		$this->trac_ticket->summary = sprintf( 'THEME: %1$s – %2$s', $this->theme->display( 'Name' ), $this->theme->display( 'Version' ) );
 
 		// Keywords
@@ -1443,7 +1442,7 @@ TICKET;
 	public function send_email_notification() {
 		if ( ! empty( $this->theme_post ) ) {
 
-			if ( 'live' === $this->trac_ticket->resolution ) {
+			if ( 'live' === $this->version_status ) {
 				// Do nothing. The update has been set as live. No need to let them know it's been uploaded.
 				// wporg_themes_approve_version() will send a "Congratulations! It's live!" email momentarily.
 				return;
