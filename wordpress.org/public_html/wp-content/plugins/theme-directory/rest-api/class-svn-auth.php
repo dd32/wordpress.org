@@ -31,13 +31,12 @@ class SVN_Auth extends Base {
 		// Some users need write access to all themes, such as the dropbox user.
 		$all_access_users   = get_option( 'svn_all_access', array( 'themedropbox' ) );
 		$all_access_users[] = 'themedropbox';
+		echo "[/]\n";
+		echo "* = r\n";
 		foreach ( array_unique( $all_access_users ) as $u ) {
-			printf(
-				"[%s]\n%s = rw\n\n",
-				'/',
-				$u
-			);
+			echo "{$u} = rw\n";
 		}
+		echo "\n";
 
 		// Theme Authors.
 		foreach ( $themes as $r ) {
