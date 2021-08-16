@@ -48,6 +48,7 @@ add_filter( 'rest_pre_echo_response', function( $result ) {
 add_action( 'rest_api_init', function() {
 	include __DIR__ . '/rest-api/class-base.php';
 	include __DIR__ . '/rest-api/class-internal-stats.php';
+	include __DIR__ . '/rest-api/class-svn-auth.php';
 	include __DIR__ . '/rest-api/class-info-endpoint.php';
 	include __DIR__ . '/rest-api/class-query-endpoint.php';
 	include __DIR__ . '/rest-api/class-commercial-shops-endpoint.php';
