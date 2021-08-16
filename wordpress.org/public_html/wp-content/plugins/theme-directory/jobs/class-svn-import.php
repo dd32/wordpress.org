@@ -17,8 +17,6 @@ use WPORG_Themes_Upload;
  */
 class SVN_Import {
 
-	const SVN_URL = 'https://themes.svn.wordpress.org/';
-
 	/**
 	 * Check for new SVN revisions on the target repo, and queue an import job for each matching.
 	 */
