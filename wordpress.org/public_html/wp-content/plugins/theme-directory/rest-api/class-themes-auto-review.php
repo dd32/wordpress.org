@@ -3,7 +3,7 @@
 namespace WordPressdotorg\Theme_Directory\Rest_API;
 
 use WP_Error;
-use WP_REST_Controller, WP_REST_Server, WP_REST_Response;
+use WP_REST_Server, WP_REST_Response;
 
 defined( 'WPINC' ) || die();
 
@@ -11,28 +11,17 @@ defined( 'WPINC' ) || die();
  *
  * @see WP_REST_Controller
  */
-class Auto_Review_Controller extends WP_REST_Controller {
-
-	/**
-	 * Constructor.
-	 *
-	 */
-	public function __construct( ) {
-		$this->namespace         = 'themes/v1';
-		$this->rest_base         = 'github';
-
-		$this->register_routes();
-	}
+class Auto_Review_Controller extends Base {
 
 	/**
 	 * Registers the routes for the objects of the controller.
 	 *
 	 * @see register_rest_route()
 	 */
-	public function register_routes() {
+	public function __construct() {
 		register_rest_route(
-			$this->namespace,
-			'/' . $this->rest_base . '/(?P<theme_slug>[^/]+)/(?P<ticket_id>[\d]+)/',
+			'themes/v1',
+			'/github/(?P<theme_slug>[^/]+)/(?P<ticket_id>[\d]+)/',
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array( $this, 'update_item' ),
@@ -49,33 +38,6 @@ class Auto_Review_Controller extends WP_REST_Controller {
 	 */
 	function update_item_permissions_check( $request ) {
 		return $this->permission_check_api_bearer( $request, 'AUTO_REVIEW_TRAC_API_GITHUB_BEARER_TOKEN' );
-	}
-
-	/**
-	 * A Permission Check callback which validates the a request against a given token.
-	 *
-	 * @param \WP_REST_Request $request  The Rest API Request.
-	 * @param string           $constant The constant that contains the expected bearer.
-	 * @return bool|\WP_Error True if the token exists, WP_Error upon failure.
-	 */
-	function permission_check_api_bearer( $request, $constant = false ) {
-		$authorization_header = $request->get_header( 'authorization' );
-		$authorization_header = trim( str_ireplace( 'bearer', '', $authorization_header ) );
-
-		if (
-			! $authorization_header ||
-			! $constant ||
-			! defined( $constant ) ||
-			! hash_equals( constant( $constant ), $authorization_header )
-		) {
-			return new \WP_Error(
-				'not_authorized',
-				__( 'Sorry! You cannot do that.', 'wporg-plugins' ),
-				array( 'status' => \WP_Http::UNAUTHORIZED )
-			);
-		}
-
-		return true;
 	}
 
 	/**

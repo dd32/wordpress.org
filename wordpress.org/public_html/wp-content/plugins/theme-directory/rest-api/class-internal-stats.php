@@ -1,10 +1,8 @@
 <?php
 namespace WordPressdotorg\Theme_Directory\Rest_API;
 use WP_REST_Server;
-use WP_Error;
-use WP_Http;
 
-class Internal_Stats {
+class Internal_Stats extends Base {
 
 	function __construct() {
 		register_rest_route( 'themes/v1', 'update-stats', array(
@@ -12,31 +10,6 @@ class Internal_Stats {
 			'callback'            => array( $this, 'bulk_update_stats' ),
 			'permission_callback' => array( $this, 'permission_check_internal_api_bearer' ),
 		) );
-	}
-
-	/**
-	 * A Permission Check callback which validates the request with a Bearer token.
-	 *
-	 * @param \WP_REST_Request $request The Rest API Request.
-	 * @return bool|\WP_Error True if the token exists, WP_Error upon failure.
-	 */
-	function permission_check_internal_api_bearer( $request ) {
-		$authorization_header = $request->get_header( 'authorization' );
-		$authorization_header = trim( str_ireplace( 'bearer', '', $authorization_header ) );
-
-		if (
-			! $authorization_header ||
-			! defined( 'THEME_API_INTERNAL_BEARER_TOKEN' ) ||
-			! hash_equals( THEME_API_INTERNAL_BEARER_TOKEN, $authorization_header )
-		) {
-			return new WP_Error(
-				'not_authorized',
-				__( 'Sorry! You cannot do that.', 'wporg-themes' ),
-				array( 'status' => \WP_Http::UNAUTHORIZED )
-			);
-		}
-
-		return true;
 	}
 
 	/**
