@@ -58,8 +58,12 @@ $spacing: 25px;
 
 		.info {
 			float:right;
-			margin-top: $spacing*2;
+			margin-top: $spacing;
 			width: 35%;
+
+			.charCode code {
+				color: #888;
+			}
 		}
 
 		span {
@@ -93,36 +97,57 @@ $spacing: 25px;
 	}
 
 	#iconlist {
-		$size: 40px;
+		$size: 96px;
+		$iconsize: 60px;
+		$gutter: 10px;
+
 		margin-top: 1.5em;
+
+		h4 {
+			padding-left: $gutter;
+
+			a {
+				text-decoration: none;
+			}
+		}
+
+		ul {
+			margin: 0;
+		}
 
 		.dashicons {
 			position: relative;
 			box-sizing: content-box;
-			padding: 10px;
+			padding: $gutter;
+			margin-bottom: $gutter * 2;
 			width: $size;
 			height: $size;
-			overflow: hidden;
 			white-space: nowrap;
-			font-size: $size;
+			font-size: $iconsize;
 			line-height: 1;
 			cursor: pointer;
-
-			&:before {
-				margin-right: $size;
-			}
-
-			&:after {
-				content: attr(alt);
-				display: block;
-				font-size: 9px;
-				color: #999;
-				text-align: center;
-			}
 
 			&:hover {
 				color: #d54e21;
 			}
+
+			span {
+				display: block;
+				font-size: 14px;
+				color: #888;
+				margin-top: $gutter;
+				text-align: center;
+				word-wrap: break-word;
+				white-space: normal;
+			}
+
+			.searching & {
+				float: left;
+			}
+		}
+
+		.searching & {
+			overflow: auto;
 		}
 	}
 

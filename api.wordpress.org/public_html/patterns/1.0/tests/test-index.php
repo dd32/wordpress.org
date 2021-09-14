@@ -17,6 +17,7 @@ class Test_Patterns extends TestCase {
 		$this->assertSame( 200, $response->status_code );
 
 		$patterns = json_decode( $response->body );
+		$this->assertIsArray( $patterns );
 		$this->assertGreaterThan( 0, count( $patterns ) );
 		$this->assertIsString( $patterns[0]->title->rendered );
 		$this->assertIsInt( $patterns[0]->meta->wpop_viewport_width );
@@ -24,20 +25,34 @@ class Test_Patterns extends TestCase {
 		$this->assertIsArray( $patterns[0]->keyword_slugs );
 	}
 
+	/**
+	 * Asserts that the results contain the search term.
+	 *
+	 * @param array $patterns
+	 * @param string $search_term
+	 */
 	public function assertAllPatternsMatchSearchTerm( $patterns, $search_term ) {
-		$all_patterns_include_query = true;
+		if ( false !== strpos( $search_term, ' ' ) ) {
+			$this->markTestIncomplete( "This doesn't support phrase-matching quoted terms yet." );
+		}
 
 		foreach ( $patterns as $pattern ) {
 			$match_in_title       = stripos( $pattern->title->rendered, $search_term );
 			$match_in_description = stripos( $pattern->meta->wpop_description, $search_term );
 
 			if ( false === $match_in_title && false === $match_in_description ) {
-				$all_patterns_include_query = false;
-				break;
+				$this->fail( "`$search_term` not found in `{$pattern->title->rendered}` pattern (ID {$pattern->id})" );
 			}
 		}
 
-		$this->assertTrue( $all_patterns_include_query );
+		$this->pass();
+	}
+
+	/**
+	 * PHPUnit provides `fail()`, but no equivalent for success. This makes calling code more obvious and self-documenting.
+	 */
+	public function pass() {
+		$this->assertTrue( true );
 	}
 
 	/**
@@ -172,9 +187,8 @@ class Test_Patterns extends TestCase {
 	 *
 	 * @param string $search_query
 	 */
-	public function test_search_patterns( $search_term, $match_expected, $expected_post_ids ) : void {
-		// wrap term in double quotes to match exact phrase.
-		$response = send_request( '/patterns/1.0/?&search="' . $search_term . '"&pattern-keywords=11&locale=en_US' );
+	public function test_search_patterns( $search_term, $locale, $match_expected, $expected_post_ids ) : void {
+		$response = send_request( "/patterns/1.0/?search=$search_term&pattern-keywords=11&locale=$locale" );
 
 		if ( $match_expected ) {
 			if ( empty( $expected_post_ids ) ) {
@@ -185,6 +199,7 @@ class Test_Patterns extends TestCase {
 
 			$patterns    = json_decode( $response->body );
 			$pattern_ids = array_column( $patterns, 'id' );
+
 			$this->assertAllPatternsMatchSearchTerm( $patterns, $search_term );
 
 			foreach ( $expected_post_ids as $id ) {
@@ -201,23 +216,157 @@ class Test_Patterns extends TestCase {
 		return array(
 			// Should find posts that have the term in the title, but _not_ in the description.
 			'match title only' => array(
-				'search_term'       => 'side by side',
+				'search_term'       => 'side',
+				'locale'            => 'en_US',
 				'match_expected'    => true,
 				'expected_post_ids' => array( 19 ),
 			),
 
-			// todo Enable this once https://github.com/WordPress/pattern-directory/issues/28 is done
-//			'match description' => array(
-//				'search_term'    => 'bright gradient background',
-//				'match_expected' => true,
-//			),
+			// Should find posts that have the term in the description, but _not_ in the title.
+			'match description only' => array(
+				'search_term'       => 'quote',
+				'locale'            => 'en_US',
+				'match_expected'    => true,
+				'expected_post_ids' => array( 185 ),
+			),
 
-			'no matches' => array(
-				'search_term'       => 'Supercalifragilisticexpialidocious',
+			"don't match post_content" => array(
+				'search_term'       => 'The voyage had begun', // Post ID 29.
+				'locale'            => 'en_US',
 				'match_expected'    => false,
 				'expected_post_ids' => false,
 			),
+
+			'no matches' => array(
+				'search_term'       => 'Supercalifragilisticexpialidocious',
+				'locale'            => 'en_US',
+				'match_expected'    => false,
+				'expected_post_ids' => false,
+			),
+
+			"don't match unlisted posts" => array(
+				'search_term'       => 'one filled and one outlined', // Post ID 5.
+				'locale'            => 'en_US',
+				'match_expected'    => false,
+				'expected_post_ids' => false,
+			),
+
+			"don't match trashed posts" => array(
+				'search_term'       => 'i18n test', // Post ID 866.
+				'locale'            => 'es_MX',
+				'match_expected'    => false,
+				'expected_post_ids' => false,
+			),
+
+			// The Core keyword (11) is hardcoded in `test_search_patterns()`, so don't need to specify it here.
+			"only match Core posts" => array(
+				'search_term'       => 'two buttons', // Post ID 727.
+				'locale'            => 'en_US',
+				'match_expected'    => false,
+				'expected_post_ids' => false,
+			),
+
+			"match spanish posts for es_MX request" => array(
+				'search_term'       => 'compensación',
+				'locale'            => 'es_MX',
+				'match_expected'    => true,
+				'expected_post_ids' => array( 2127 ),
+			),
+
+			"don't match nl_NL post for en_US request" => array(
+				'search_term'       => 'verschoven', // Post ID 2226.
+				'locale'            => 'en_US',
+				'match_expected'    => false,
+				'expected_post_ids' => false,
+			),
+
+			// Latin was chosen because it's unlikely to ever be translated
+			// @link https://translate.wordpress.org/projects/patterns/core/
+			"untranslated locales should have en_US posts as a fallback" => array(
+				'search_term'       => 'offset',
+				'locale'            => 'la',
+				'match_expected'    => true,
+				'expected_post_ids' => array( 201 ),
+			),
 		);
+	}
+
+	/**
+	 * @covers ::main()
+	 *
+	 * @group e2e
+	 */
+	public function test_search_title_match_boosted_above_description_match() : void {
+		$search_term = 'image';
+		$locale      = 'en_US';
+
+		$response = send_request( "/patterns/1.0/?search=$search_term&pattern-keywords=11&locale=$locale" );
+		$this->assertResponseHasPattern( $response );
+
+		$patterns = json_decode( $response->body );
+
+		$this->assertAllPatternsMatchSearchTerm( $patterns, $search_term );
+
+		$actualOrder = array_column( $patterns, 'id' );
+
+		// Intentionally _not_ using `uasort()`, in order to catch different key orders.
+		$expectedPatterns = json_decode( json_encode( $patterns ) );
+
+		usort( $expectedPatterns, function( $a, $b ) use ( $search_term ) {
+			$adjustment       = 0;
+			$found_in_title_a = false === stripos( $search_term, $a->title->rendered );
+			$found_in_title_b = false === stripos( $search_term, $b->title->rendered );
+
+			if ( $found_in_title_a && ! $found_in_title_b ) {
+				$adjustment = -1;
+			} elseif ( ! $found_in_title_a && $found_in_title_b ) {
+				$adjustment = 1;
+			}
+
+			return $adjustment;
+		} );
+
+		$expectedOrder = array_column( $expectedPatterns, 'id' );
+
+		$this->assertSame( $expectedOrder, $actualOrder );
+	}
+
+	/**
+	 * @covers ::main()
+	 *
+	 * @group e2e
+	 */
+	public function test_search_locale_sort() : void {
+		$search_term = 'offset';
+		$locale      = 'nl_NL';
+
+		$response = send_request( "/patterns/1.0/?search=$search_term&pattern-keywords=11&locale=$locale" );
+		$this->assertResponseHasPattern( $response );
+
+		$patterns = json_decode( $response->body );
+
+		$this->assertAllPatternsMatchSearchTerm( $patterns, $search_term );
+
+		$this->markTestIncomplete(); // todo the following code works, but `WordPressdotorg\Pattern_Directory\Search\modify_es_query_args` isn't boosting the primary locale yet
+
+		$actualOrder = array_column( array_column( $patterns, 'meta' ), 'wpop_locale'  );
+
+		// Intentionally _not_ using `uasort()`, in order to catch different key orders.
+		$expectedOrder = json_decode( json_encode( $actualOrder ) );
+
+		usort( $expectedOrder, function( $a, $b ) {
+			$adjustment = 0;
+
+			if ( $a !== 'en_US' && $b === 'en_US' ) {
+				$adjustment = -1;
+			} elseif ( $a === 'en_US' && $b !== 'en_US' ) {
+				$adjustment = 1;
+			}
+
+			return $adjustment;
+		} );
+
+		$this->assertSame( $expectedOrder, $actualOrder );
 	}
 
 	/**

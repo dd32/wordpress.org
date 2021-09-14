@@ -12,12 +12,12 @@
 		},
 
 		random: function() {
-			var divs = jQuery("#iconlist div").get().sort(function(){
+			const listItems = jQuery("#iconlist li").get().sort(function(){
 					return Math.round(Math.random())-0.5;
 				}).slice(0,1);
 
-			attr = jQuery(divs).attr('alt');
-			cssClass = jQuery(divs).attr('class');
+			attr = jQuery(listItems).attr('data-code');
+			cssClass = jQuery(listItems).attr('class');
 			dashicons.display( attr, cssClass );
 		},
 
@@ -34,11 +34,15 @@
 			jQuery('#temp').html( glyphtemp );
 			glyphtext = jQuery('#temp').text();
 
-			var sectionName = jQuery('#iconlist div.dashicons-' + permalink ).prevAll('h4').first().text();
+			// icon code
+			var charCode = jQuery('#iconlist li.dashicons-' + permalink ).attr('data-code');
+
+			var sectionName = jQuery('#iconlist li.dashicons-' + permalink ).parent().prevAll('h4')[0].childNodes[0].nodeValue;
 
 			var tmpl = wp.template( 'glyphs' );
 
 			jQuery( '#glyph' ).html( tmpl({
+				charCode: charCode,
 				cssClass: 'dashicons-' + permalink,
 				sectionName: sectionName,
 				attr: attr,
@@ -64,16 +68,16 @@
 				dashicons.random();
 			}
 
-			attr = jQuery( '.' + permalink ).attr( 'alt' );
+			attr = jQuery( '.' + permalink ).attr( 'data-code' );
 			cssClass = jQuery( '.' + permalink ).attr('class');
 			dashicons.display( attr, cssClass );
 		} else {
 			dashicons.random();
 		}
 
-		jQuery( '#iconlist div' ).click(function() {
+		jQuery( '#iconlist li' ).click(function() {
 
-			attr = jQuery( this ).attr( 'alt' );
+			attr = jQuery( this ).attr( 'data-code' );
 			cssClass = jQuery( this ).attr( 'class' );
 
 			dashicons.display( attr, cssClass );
@@ -81,7 +85,7 @@
 
 		});
 
-		var $rows = jQuery('#iconlist div');
+		var $rows = jQuery('#iconlist li');
 		jQuery('#search').keyup(function() {
 
 			// remove update text when using search
@@ -89,12 +93,13 @@
 
 			var val = jQuery.trim(jQuery(this).val()).replace(/ +/g, ' ').toLowerCase();
 
-			if ( val == '' ) {
+			if ( val.length < 3 ) {
+				val = '';
 				jQuery('body').removeClass('searching');
 			}
 
 			$rows.show().filter(function() {
-				var text = jQuery(this).text().replace(/\s+/g, ' ').toLowerCase();
+				var text = jQuery(this).attr('data-keywords').replace(/\s+/g, ' ').toLowerCase();
 				return !~text.indexOf(val);
 			}).hide();
 		});

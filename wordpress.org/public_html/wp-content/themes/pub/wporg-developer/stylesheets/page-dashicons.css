@@ -59,8 +59,12 @@
 
 .dashicons-page #glyph .info {
   float: right;
-  margin-top: 30px;
+  margin-top: 25px;
   width: 35%;
+}
+
+.dashicons-page #glyph .info .charCode code {
+  color: #888;
 }
 
 .dashicons-page #glyph span {
@@ -96,33 +100,51 @@
   margin-top: 1.5em;
 }
 
+.dashicons-page #iconlist h4 {
+  padding-left: 10px;
+}
+
+.dashicons-page #iconlist h4 a {
+  text-decoration: none;
+}
+
+.dashicons-page #iconlist ul {
+  margin: 0;
+}
+
 .dashicons-page #iconlist .dashicons {
   position: relative;
   box-sizing: content-box;
   padding: 10px;
-  width: 40px;
-  height: 40px;
-  overflow: hidden;
+  margin-bottom: 20px;
+  width: 96px;
+  height: 96px;
   white-space: nowrap;
-  font-size: 40px;
+  font-size: 60px;
   line-height: 1;
   cursor: pointer;
 }
 
-.dashicons-page #iconlist .dashicons:before {
-  margin-right: 40px;
-}
-
-.dashicons-page #iconlist .dashicons:after {
-  content: attr(alt);
-  display: block;
-  font-size: 9px;
-  color: #999;
-  text-align: center;
-}
-
 .dashicons-page #iconlist .dashicons:hover {
   color: #d54e21;
+}
+
+.dashicons-page #iconlist .dashicons span {
+  display: block;
+  font-size: 14px;
+  color: #888;
+  margin-top: 10px;
+  text-align: center;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+.searching .dashicons-page #iconlist .dashicons {
+  float: left;
+}
+
+.searching .dashicons-page #iconlist {
+  overflow: auto;
 }
 
 .dashicons-page #instructions {

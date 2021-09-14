@@ -7,31 +7,31 @@ import useDeepCompareEffect from 'use-deep-compare-effect';
 /**
  * WordPress dependencies
  */
+import { __ } from '@wordpress/i18n';
 import { Spinner } from '@wordpress/components';
-import { useState } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
+import { useState } from '@wordpress/element';
 
 /**
  * Internal dependencies
  */
 import { useRoute } from '../../hooks';
-import { getLoadingMessage, getMessage, getSearchMessage } from './messaging';
+import { getLoadingMessage, getMessage, getPageLabel, getSearchMessage } from './messaging';
 import { store as patternStore } from '../../store';
 
 /**
  * Check if the query is just the "home" query, and doesn't need a message.
  *
- * If the query has no properties, or only "orderby", it is considered a "home" query.
+ * Exclude the orderby & page properties; if there are no other query keys, this is a "home" query.
  *
  * @param {Object} query
  * @return {boolean}
  */
 const isHomeQuery = ( query ) => {
-	const keys = Object.keys( query || {} );
-	if ( ! keys.length ) {
-		return true;
-	}
-	return keys.length === 1 && keys[ 0 ] === 'orderby';
+	const allKeys = Object.keys( query || {} );
+	// Filter out "orderby" and "page", which have no affect on what kind of query this is.
+	const keys = allKeys.filter( ( key ) => ! [ 'orderby', 'page' ].includes( key ) );
+	return ! keys.length;
 };
 
 /**
@@ -56,18 +56,27 @@ function ContextBar( props ) {
 		links: [],
 	} );
 
-	const { author, category, count, isLoadingPatterns, query } = useSelect(
+	const { author, category, count, isLoadingPatterns, pageLabel, query } = useSelect(
 		( select ) => {
-			const { getCategoryById, getPatternTotalsByQuery, getQueryFromUrl, isLoadingPatternsByQuery } = select(
-				patternStore
-			);
+			const {
+				getCategoryById,
+				getPatternTotalsByQuery,
+				getPatternTotalPagesByQuery,
+				getQueryFromUrl,
+				isLoadingPatternsByQuery,
+			} = select( patternStore );
 			const _query = { ...getQueryFromUrl( path ), ...props.query };
+			const isLoading = isLoadingPatternsByQuery( _query );
 
 			return {
 				author: wporgPatternsData.currentAuthorName || _query?.author_name,
 				category: getCategoryById( _query[ 'pattern-categories' ] ),
 				count: getPatternTotalsByQuery( _query ),
-				isLoadingPatterns: isLoadingPatternsByQuery( _query ),
+				isLoadingPatterns: isLoading,
+				pageLabel:
+					_query && ! isLoading
+						? getPageLabel( _query.page, getPatternTotalPagesByQuery( _query ) )
+						: '',
 				query: _query,
 			};
 		},
@@ -101,33 +110,36 @@ function ContextBar( props ) {
 		}
 	}, [ query, isLoadingPatterns ] );
 
-	const classes = classnames( {
+	const spinnerClassName = classnames( {
 		'context-bar__spinner': true,
 		'context-bar__spinner--is-hidden': ! isLoadingPatterns,
 	} );
 
-	return ! message ? null : (
-		<header className="context-bar">
-			<h2 className="context-bar__copy">
-				<span className={ classes }>
-					<Spinner />
-				</span>
-				<span>{ message }</span>
-			</h2>
-			{ context.links && context.links.length > 0 && (
-				<div className="context-bar__links">
-					<h3 className="context-bar__title">{ context.title }</h3>
+	return (
+		<div className={ message ? null : 'screen-reader-text' }>
+			<header className="context-bar" aria-live="polite" aria-atomic="true" tabIndex="0">
+				<h2 className="context-bar__copy">
+					<span className={ spinnerClassName }>
+						<Spinner />
+					</span>
+					<span>{ message || __( 'All patterns.', 'wporg-patterns' ) }</span>
+					{ pageLabel && <span className="screen-reader-text">{ pageLabel }</span> }
+				</h2>
+				{ context.links && context.links.length > 0 && (
+					<div className="context-bar__links">
+						<h3 className="context-bar__title">{ context.title }</h3>
 
-					<ul>
-						{ context.links.map( ( i ) => (
-							<li key={ i.href }>
-								<a href={ i.href }>{ i.label }</a>
-							</li>
-						) ) }
-					</ul>
-				</div>
-			) }
-		</header>
+						<ul>
+							{ context.links.map( ( i ) => (
+								<li key={ i.href }>
+									<a href={ i.href }>{ i.label }</a>
+								</li>
+							) ) }
+						</ul>
+					</div>
+				) }
+			</header>
+		</div>
 	);
 }
 
