@@ -213,7 +213,7 @@ class Meetup_Client extends API_Client {
 
 	/**
 	 * Similar to array_merge_recursive(), but only merges numeric arrays with one another, overwriting others.
-	 * 
+	 *
 	 * Based on https://www.php.net/manual/en/function.array-merge-recursive.php#92195
 	 */
 	private function array_merge_recursive_numeric_arrays( array &$array1, array &$array2 ) {
@@ -298,15 +298,15 @@ class Meetup_Client extends API_Client {
 
 	/**
 	 * Convert a ISO8601-ish DateTime returned from the API to a timestamp.
-	 * 
+	 *
 	 * Handles timestamps in two main formats:
 	 *  - 2021-11-20T17:00+05:30
 	 *  - 2021-11-20T06:30-05:00[US/Eastern]
 	 * Neither contains seconds.
-	 * 
+	 *
 	 * Some extra compat formats are included, just incase Meetup.com decides to return in other similar formats,
 	 * or with different timezone formats, etc.
-	 * 
+	 *
 	 * @param string $datetime A DateTime string returned by the API
 	 * @return int The UTC epoch timestamp.
 	 */
@@ -435,7 +435,7 @@ $this->debug = true;
 			'groupAnalytics {
 				totalPastEvents,
 				totalMembers,
-				lastEventDate, 
+				lastEventDate,
 			}',
 			'foundedDate', 'proJoinDate',
 		];
@@ -598,7 +598,7 @@ $this->debug = true;
 
 	/**
 	 * Retrieve Event Details
-	 * 
+	 *
 	 * @param string $event_id The Event ID.
 	 * @return array
 	 */
@@ -669,7 +669,7 @@ $this->debug = true;
 			'groupAnalytics {
 				totalPastEvents,
 				totalMembers,
-				lastEventDate, 
+				lastEventDate,
 			}',
 			'foundedDate', 'proJoinDate',
 		];
@@ -825,11 +825,11 @@ $this->debug = true;
 		 *  - pastEvents: No filters.
 		 *  - draftEvents: No Filters.
 		 *  - unifiedEvents: Supports Filtering via the undocumented 'GroupEventsFilter', does not support status/dates?
-		 * 
+		 *
 		 * Querying for multiple of these fields results in multiple paginated subkeys, complicating the requests, not
 		 * impossible but not within the spirit of this simplified query class, so we'll avoid requesting multiple paginated
 		 * fields.
-		 * 
+		 *
 		 * As a result of this, if the request is for multiple statuses, we're going to recursively call ourselves.. so that
 		 * we can query using the individual fields to get the statii we want, and apply the other filters directly.
 		 */
@@ -887,6 +887,8 @@ $this->debug = true;
 			}'
 		];
 
+		// TODO: Check the above list against Official_WordPress_Events::parse_meetup_events()
+
 		if ( ! empty( $args['fields'] ) && is_array( $args['fields'] ) ) {
 			$fields = array_merge(
 				$fields,
@@ -941,7 +943,9 @@ $this->debug = true;
 
 		// Apply Back-compat keys to Events.
 		foreach ( $results as &$event ) {
-			$event['time']        = $this->datetime_to_time( $event['dateTime'] ) * 1000;
+			// TODO: Check the above list against Official_WordPress_Events::parse_meetup_events()
+
+			$event['time'] = $this->datetime_to_time( $event['dateTime'] ) * 1000;
 		}
 
 		// Apply filters.
@@ -975,7 +979,7 @@ $this->debug = true;
 		$result         = false;
 		$manual_filters = [];
 		$filters        = [];
-	
+
 		// Number of groups in the Pro Network.
 		if ( 'pro/wordpress/groups' !== $route ) {
 			return false;
