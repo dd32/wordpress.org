@@ -926,7 +926,7 @@ $this->debug = true;
 		}';
 		$variables = [
 			'urlname' => $group_slug,
-			'perPage' => 1,
+			'perPage' => 200,
 			'cursor'  => null,
 		];
 
