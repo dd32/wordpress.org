@@ -311,7 +311,10 @@ var_dump( compact( 'oauth_token' ) );
 	 * @return int The UTC epoch timestamp.
 	 */
 	protected function datetime_to_time( $datetime ) {
-		if ( is_int( $datetime ) || (int)$datetime === (string)$datetime ) {
+		if ( is_numeric( $datetime ) && $datetime > 4102444800 /* 2100-01-01 */ ) {
+			$datetime /= 1000;
+			return (int) $datetime;
+		} elseif ( is_numeric( $datetime ) ) {
 			return (int) $datetime;
 		}
 
@@ -437,39 +440,20 @@ var_dump( compact( 'oauth_token' ) );
 			$fields = array_merge( $fields, $args['fields'] );
 		}
 
-		$filters        = [];
-		$manual_filters = [];
+		$filters = [];
 		/*
 		 *  See https://www.meetup.com/api/schema/#GroupAnalyticsFilter for valid filters.
 		 */
 		if ( isset( $args['pro_join_date_max'] ) ) {
-			// Parameter passed with ms.
-			if ( is_numeric( $args['pro_join_date_max'] ) ) {
-				$args['pro_join_date_max'] /= 1000;
-			} else {
-				$args['pro_join_date_max'] = $this->datetime_to_time( $args['pro_join_date_max'] );
-			}
-
-			// No workie :(
-			// $filters[] = 'proJoinDateMax: "' . gmdate( 'c', $args['pro_join_date_max'] ) . '"';
-			$manual_filters['pro_join_date_max'] = $args['pro_join_date_max'];
+			$filters['proJoinDateMax'] = 'proJoinDateMax: ' . $this->datetime_to_time( $args['pro_join_date_max'] ) * 1000;
 		}
 		if ( isset( $args['last_event_min'] ) ) {
-			// Parameter passed with ms.
-			if ( is_numeric( $args['last_event_min'] ) ) {
-				$args['last_event_min'] /= 1000;
-			} else {
-				$args['last_event_min'] = $this->datetime_to_time( $args['last_event_min'] );
-			}
-
-			// No workie :(
-			// $filters[] = 'lastEventMin: "' . gmdate( 'c', $args['last_event_min'] ) . '"';
-			$manual_filters['last_event_min'] = $args['last_event_min'];
+			$filters['lastEventMin'] = 'lastEventMin: ' . $this->datetime_to_time( $args['last_event_min'] ) * 1000;
 		}
 
 		if ( isset( $args['filters'] ) ) {
 			foreach ( $args['filters'] as $key => $value ) {
-				$filters[] = "{$key}: {$value}";
+				$filters[ $key ] = "{$key}: {$value}";
 			}
 		}
 
@@ -482,7 +466,7 @@ var_dump( compact( 'oauth_token' ) );
 		$query = '
 		query ($urlname: String!, $perPage: Int!, $cursor: String ) {
 			proNetworkByUrlname( urlname: $urlname ) {
-				groupsSearch( input: { first: $perPage, after: $cursor }, filter: { ' . implode( ' ', $filters ) . '} ) {
+				groupsSearch( input: { first: $perPage, after: $cursor }, filter: { ' . implode( ', ', $filters ) . '} ) {
 					count
 					'  . $this->gql_pageInfo . '
 					edges {
@@ -514,30 +498,6 @@ var_dump( compact( 'oauth_token' ) );
 			}
 		}
 
-		if ( $manual_filters ) {
-			$results = array_filter(
-				$results,
-				function( $result ) use( $manual_filters ) {
-					if (
-						! empty( $manual_filters['pro_join_date_max'] ) &&
-						$result['pro_join_date']/1000 >= $manual_filters['pro_join_date_max']
-					) {
-						return false;
-					}
-
-					if (
-						! empty( $manual_filters['last_event_min'] ) &&
-						isset( $result['last_event'] ) &&
-						$result['last_event']/1000 <= $manual_filters['last_event_min']
-					) {
-						return false;
-					}
-
-					return true;
-				}
-			);
-		}
-
 		return $results;
 	}
 
@@ -565,7 +525,7 @@ var_dump( compact( 'oauth_token' ) );
 	public function get_events( array $group_slugs, array $args = array() ) {
 		$events = array();
 
-		// TODO
+		// TODO See get_network_events();
 		// Might be able to use ProNetwork -> https://www.meetup.com/api/schema/#ProNetworkEventsConnection
 		// to simply select all events within the Pro network, rather than querying by specific slugs.
 		// We can keep this method though, and implement that separately, as due to Meetup.com GraphQL & this Clients
@@ -767,13 +727,11 @@ var_dump( compact( 'oauth_token' ) );
 		// See https://www.meetup.com/api/schema/#ProNetworkEventsFilter
 		$filters = [];
 
-		// WTF! This works! It accepts an Epoch timestamp time(), rather than a DateTime value.
 		if ( $args['min_event_date'] ) {
-			$filters[] = 'eventDateMin: ' . $this->datetime_to_time( $args['max_event_date'] );
+			$filters[] = 'eventDateMin: ' . $this->datetime_to_time( $args['max_event_date'] ) * 1000;
 		}
-		// BUT THIS DOESN'T!~?!!?!?!?!?
 		if ( $args['max_event_date'] ) {
-			$filters[] = 'eventDateMax: ' . $this->datetime_to_time( $args['max_event_date'] );
+			$filters[] = 'eventDateMax: ' . $this->datetime_to_time( $args['max_event_date'] ) * 1000;
 		}
 
 		if ( ! is_null( $args['online_events'] ) ) {
@@ -813,7 +771,7 @@ var_dump( compact( 'oauth_token' ) );
 			return $results;
 		}
 
-		// Select {$event_field}.edges[*].node
+		// Select edges[*].node
 		$results = array_column(
 			$results['data']['proNetworkByUrlname']['eventsSearch']['edges'],
 			'node'
@@ -904,8 +862,7 @@ var_dump( compact( 'oauth_token' ) );
 				return [];
 		}
 
-
-		// No filters defined, as we have to do it ourselves.
+		// No filters defined, as we have to do it ourselves. See above.
 
 		$query = '
 		query ( $urlname: String!, $perPage: Int!, $cursor: String ) {
@@ -967,106 +924,43 @@ var_dump( compact( 'oauth_token' ) );
 	 * @return int|WP_Error
 	 */
 	public function get_result_count( $route, array $args = array() ) {
-		$result         = false;
-		$manual_filters = [];
-		$filters        = [];
+		$result  = false;
+		$filters = [];
 
 		// Number of groups in the Pro Network.
 		if ( 'pro/wordpress/groups' !== $route ) {
 			return false;
 		}
 
-		// As usual, these filters do not work.
 		// https://www.meetup.com/api/schema/#GroupAnalyticsFilter
 		if ( ! empty( $args['pro_join_date_max'] ) ) {
-			// $filters[] = 'proJoinDateMax: ' . $args['pro_join_date_max'] . '';
-			$manual_filters['max_date'] = $this->datetime_to_time( $args['pro_join_date_max'] );
+			$filters['proJoinDateMax'] = 'proJoinDateMax: ' . $this->datetime_to_time( $args['pro_join_date_max'] ) * 1000;
 		}
 		if ( ! empty( $args['pro_join_date_min'] ) ) {
-			// $filters[] = 'proJoinDateMin: ' . $args['pro_join_date_min'] . '';
-			$manual_filters['min_date'] = $this->datetime_to_time( $args['pro_join_date_min'] );
+			$filters['proJoinDateMin'] = 'proJoinDateMin: ' . $this->datetime_to_time( $args['pro_join_date_min'] ) * 1000;
 		}
 
 		if ( isset( $args['filters'] ) ) {
 			foreach ( $args['filters'] as $key => $value ) {
-				$filters[] = "{$key}: {$value}";
+				$filters[ $key ] = "{$key}: {$value}";
 			}
 		}
-
-		// Do a smaller query if we only want the total count.
-		if ( ! $manual_filters && ! $filters ) {
-			$query = '
-			query {
-				proNetworkByUrlname( urlname: "wordpress" ) {
-					groupsSearch {
-						count
-					}
-				}
-			}';
-
-			$results = $this->send_paginated_request( $query );
-			if ( is_wp_error( $results ) ) {
-				return $results;
-			}
-
-			return (int) $results['data']['proNetworkByUrlname']['groupsSearch']['count'];
-		}
-
-		// Query with filters, manual filters too.
-		// TODO: When Meetup.com supports proJoinDateMax & proJoinDateMin, the below 'filter' key can be
-		//       added to the above query, and none of the pagination, edge nodes, or any code below will be required.
 
 		$query = '
-		query ( $urlname: String!, $perPage: Int!, $cursor: String ) {
-			proNetworkByUrlname( urlname: $urlname ) {
-				groupsSearch ( input: { first: $perPage, after: $cursor}, filter: { ' .  implode( ' ', $filters ) . ' } ) {
-					' . $this->gql_pageInfo . '
+		query {
+			proNetworkByUrlname( urlname: "wordpress" ) {
+				groupsSearch( filter: { ' .  implode( ', ', $filters ) . ' } ) {
 					count
-					edges {
-						node {
-							proJoinDate
-						}
-					}
 				}
 			}
 		}';
-		$variables = [
-			'urlname' => 'wordpress',
-			'perPage' => 999, // Max 1000. We have <1k groups, which will limit this to 1 query usually.
-			'cursor'  => null,
-		];
 
-		$results = $this->send_paginated_request( $query, $variables );
+		$results = $this->send_paginated_request( $query );
 		if ( is_wp_error( $results ) ) {
 			return $results;
 		}
 
-		return (int) count(
-			array_filter(
-				$results['data']['proNetworkByUrlname']['groupsSearch']['edges'],
-				function( $edge_node ) use( $manual_filters ) {
-					$time = $this->datetime_to_time( $edge_node['node']['proJoinDate'] );
-
-					if (
-						isset( $manual_filters['min_date'] ) &&
-						$time < $manual_filters['min_date']
-					) {
-						return false;
-					}
-
-					if (
-						isset( $manual_filters['max_date'] ) &&
-						$time > $manual_filters['max_date']
-					) {
-						return false;
-					}
-
-					// Event is within our date filter.
-					return true;
-				}
-			)
-		);
-
+		return (int) $results['data']['proNetworkByUrlname']['groupsSearch']['count'];
 	}
 
 	private function get_default_fields( $type ) {
