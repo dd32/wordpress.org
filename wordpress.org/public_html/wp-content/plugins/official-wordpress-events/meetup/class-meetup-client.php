@@ -133,7 +133,7 @@ class Meetup_Client extends API_Client {
 	 *
 	 * @return array|WP_Error The results of the request.
 	 */
-	public function send_paginated_request( $query, $variables = null ) {
+	public function send_paginated_request( $query, $variables = null, $loop = true ) {
 		$data = array();
 
 		$has_next_page        = false;
@@ -202,7 +202,7 @@ class Meetup_Client extends API_Client {
 
 				break;
 			}
-		} while ( $has_next_page );
+		} while ( $has_next_page && $loop );
 
 		if ( ! empty( $this->error->get_error_messages() ) ) {
 			return $this->error;
@@ -240,7 +240,7 @@ class Meetup_Client extends API_Client {
 	 */
 	protected function get_request_args( $query, $variables = null ) {
 		$oauth_token = $this->oauth_client->get_oauth_token();
-
+var_dump( compact( 'oauth_token' ) );
 		if ( ! empty( $this->oauth_client->error->get_error_messages() ) ) {
 			$this->error = $this->merge_errors( $this->error, $this->oauth_client->error );
 		}
@@ -310,7 +310,11 @@ class Meetup_Client extends API_Client {
 	 * @param string $datetime A DateTime string returned by the API
 	 * @return int The UTC epoch timestamp.
 	 */
-	protected function datetime_to_time( string $datetime ) {
+	protected function datetime_to_time( $datetime ) {
+		if ( is_int( $datetime ) || (int)$datetime === (string)$datetime ) {
+			return (int) $datetime;
+		}
+
 		$datetime_formats = [
 			'Y-m-d\TH:iP',   // 2021-11-20T17:00+05:30
 			'Y-m-d\TH:i:sP', // 2021-11-20T17:00:00+05:30
@@ -427,18 +431,7 @@ class Meetup_Client extends API_Client {
 	 * @return array|WP_Error
 	 */
 	public function get_groups( array $args = array() ) {
-$this->debug = true;
-
-		$fields = [
-			'id', 'name', 'urlname', 'link',
-			'city', 'state', 'country',
-			'groupAnalytics {
-				totalPastEvents,
-				totalMembers,
-				lastEventDate,
-			}',
-			'foundedDate', 'proJoinDate',
-		];
+		$fields = $this->get_default_fields( 'group' );
 
 		if ( !empty( $args['fields'] ) && is_array( $args['fields'] ) ) {
 			$fields = array_merge( $fields, $args['fields'] );
@@ -604,33 +597,7 @@ $this->debug = true;
 	 */
 	function get_event_details( $event_id ) {
 
-		$fields = [
-			// See https://www.meetup.com/api/schema/#Event for valid fields.
-			'id',
-			'title',
-			'description',
-			'eventUrl',
-			'status',
-			'timeStatus',
-			'dateTime',
-			'duration',
-			'endTime',
-			'createdAt',
-			'isOnline',
-			'going',
-			'group {
-				name
-				city
-				country
-			}',
-			'venue {
-				lat
-				lng
-				name
-				city
-				country
-			}'
-		];
+		$fields = $this->get_default_fields( 'event' );
 
 		// Accepts, slug / id / slugId as the query-by fields.
 		$query = '
@@ -649,8 +616,7 @@ $this->debug = true;
 			return $result;
 		}
 
-		// No backcompat.. new method!
-		return $result['data']['event'];
+		return $this->apply_backcompat_fields( 'event', $result['data']['event'] );
 	}
 
 	/**
@@ -663,16 +629,7 @@ $this->debug = true;
 	 * @return array|WP_Error
 	 */
 	public function get_group_details( $group_slug, $args = array() ) {
-		$fields = [
-			'id', 'name', 'urlname', 'link',
-			'city', 'state', 'country',
-			'groupAnalytics {
-				totalPastEvents,
-				totalMembers,
-				lastEventDate,
-			}',
-			'foundedDate', 'proJoinDate',
-		];
+		$fields = $this->get_default_fields( 'group' );;
 
 		$events_fields = [
 			'dateTime',
@@ -684,6 +641,8 @@ $this->debug = true;
 		}
 		if ( !empty( $args['events_fields'] ) && is_array( $args['events_fields'] ) ) {
 			$events_fields = array_merge( $events_fields, $args['events_fields'] );
+		} elseif ( !empty( $args['events_fields'] ) && true === $args['events_fields'] ) {
+			$events_fields = array_merge( $events_fields, $this->get_default_fields( 'events' ) );
 		}
 
 		// pastEvents cannot filter to the most recent past event, `last: 1`, `reverse:true, first: 1`, etc doesn't work.
@@ -718,14 +677,7 @@ $this->debug = true;
 		// Format it similar to previous response payload??
 		$result = $result['data']['groupByUrlname'];
 
-		// Stub in the fields that are different.
-		$result['created']            = $this->datetime_to_time( $result['foundedDate'] ) * 1000;
-		$result['localized_location'] = implode( ', ', array_filter( [ $result['city'], $result['state'], strtoupper( $result['country'] ) ] ) ); // Previously: 'City, India'. Now: 'City, IN'
-		$result['members']            = $result['groupAnalytics']['totalMembers'] ?? 0;
-		$result['last_event']         = [
-			'time'           => $this->datetime_to_time( end( $result['pastEvents']['edges'] )['node']['dateTime'] ) * 1000,
-			'yes_rsvp_count' => end( $result['pastEvents']['edges'] )['node']['going'],
-		];
+		$result = $this->apply_backcompat_fields( 'group', $result );
 
 		return $result;
 	}
@@ -740,12 +692,7 @@ $this->debug = true;
 	 * @return array|WP_Error
 	 */
 	public function get_group_members( $group_slug, $args = array() ) {
-		$fields = [
-			// See https://www.meetup.com/api/schema/#User for valid fields.
-			'id',
-			'name',
-			'email',
-		];
+		$fields = $this->get_default_fields( 'memberships' );
 
 		if ( ! empty( $args['fields'] ) && is_array( $args['fields'] ) ) {
 			$fields = array_merge(
@@ -799,6 +746,81 @@ $this->debug = true;
 		);
 
 		return $results;
+	}
+
+	/**
+	 * Query all events from the Network.
+	 */
+	public function get_network_events( array $args = array() ) {
+		$defaults = [
+			'filters'        => [],
+			'max_event_date' => time() + YEAR_IN_SECONDS,
+			'min_event_date' => false,
+			'online_events'  => null, // true: only online events, false: only IRL events
+			'status'         => 'upcoming', //  UPCOMING, PAST, CANCELLED
+			'sort'           => '',
+		];
+		$args = wp_parse_args( $args, $defaults );
+
+		$fields = $this->get_default_fields( 'event' );
+
+		// See https://www.meetup.com/api/schema/#ProNetworkEventsFilter
+		$filters = [];
+
+		// WTF! This works! It accepts an Epoch timestamp time(), rather than a DateTime value.
+		if ( $args['min_event_date'] ) {
+			$filters[] = 'eventDateMin: ' . $this->datetime_to_time( $args['max_event_date'] );
+		}
+		// BUT THIS DOESN'T!~?!!?!?!?!?
+		if ( $args['max_event_date'] ) {
+			$filters[] = 'eventDateMax: ' . $this->datetime_to_time( $args['max_event_date'] );
+		}
+
+		if ( ! is_null( $args['online_events'] ) ) {
+			$filters[] = 'isOnlineEvent: ' . ( $args['online_events'] ? 'true' : 'false' );
+		}
+
+		// See https://www.meetup.com/api/schema/#ProNetworkEventStatus
+		if ( $args['status'] && in_array( $args['status'], [ 'cancelled', 'upcoming', 'past' ] ) ) {
+			$filters[] = 'status: ' . strtoupper( $args['status'] );
+		}
+
+		if ( $args['filters'] ) {
+			$filters = array_merge( $filters, $args['filters'] );
+		}
+
+		$query = '
+		query ( $urlname: String!, $perPage: Int!, $cursor: String ) {
+			proNetworkByUrlname( urlname: $urlname ) {
+				eventsSearch ( input: { first: $perPage, after: $cursor }, filter: { ' . implode( ', ', $filters )  . ' } ) {
+					' . $this->gql_pageInfo . '
+					edges {
+						node {
+							' . implode( ' ', $fields ) . '
+						}
+					}
+				}
+			}
+		}';
+		$variables = [
+			'urlname' => 'wordpress',
+			'perPage' => 2,
+			'cursor'  => null,
+		];
+
+		$results = $this->send_paginated_request( $query, $variables, false );
+		if ( is_wp_error( $results ) || ! isset( $results['data']['proNetworkByUrlname']['eventsSearch'] ) ) {
+			return $results;
+		}
+
+		// Select {$event_field}.edges[*].node
+		$results = array_column(
+			$results['data']['proNetworkByUrlname']['eventsSearch']['edges'],
+			'node'
+		);
+
+		return $results;
+
 	}
 
 	/**
@@ -859,33 +881,7 @@ $this->debug = true;
 			return $events;
 		}
 
-		$fields = [
-			// See https://www.meetup.com/api/schema/#Event for valid fields.
-			'id',
-			'title',
-			'description',
-			'eventUrl',
-			'status',
-			'timeStatus',
-			'dateTime',
-			'duration',
-			'endTime',
-			'createdAt',
-			'isOnline',
-			'going',
-			'group {
-				name
-				city
-				country
-			}',
-			'venue {
-				lat
-				lng
-				name
-				city
-				country
-			}'
-		];
+		$fields = $this->get_default_fields( 'event' );
 
 		// TODO: Check the above list against Official_WordPress_Events::parse_meetup_events()
 
@@ -941,12 +937,7 @@ $this->debug = true;
 			'node'
 		);
 
-		// Apply Back-compat keys to Events.
-		foreach ( $results as &$event ) {
-			// TODO: Check the above list against Official_WordPress_Events::parse_meetup_events()
-
-			$event['time'] = $this->datetime_to_time( $event['dateTime'] ) * 1000;
-		}
+		$results = $this->apply_backcompat_fields( 'events', $results );
 
 		// Apply filters.
 		if ( $args['no_earlier_than'] || $args['no_later_than'] ) {
@@ -1076,5 +1067,100 @@ $this->debug = true;
 			)
 		);
 
+	}
+
+	private function get_default_fields( $type ) {
+		if ( 'event' === $type ) {
+			// See https://www.meetup.com/api/schema/#Event for valid fields.
+			return [
+				'id',
+				'title',
+				'description',
+				'eventUrl',
+				'status',
+				'timeStatus',
+				'dateTime',
+				'duration',
+				'endTime',
+				'createdAt',
+				'isOnline',
+				'going',
+				'group {
+					name
+					city
+					country
+				}',
+				'venue {
+					lat
+					lng
+					name
+					city
+					country
+				}'
+			];
+		} elseif ( 'memberships' === $type ) {
+			// See https://www.meetup.com/api/schema/#User for valid fields.
+			return [
+				'id',
+				'name',
+				'email',
+			];
+		} elseif ( 'group' === $type ) {
+			return [
+				'id',
+				'name',
+				'urlname',
+				'link',
+				'city',
+				'state',
+				'country',
+				'groupAnalytics {
+					totalPastEvents,
+					totalMembers,
+					lastEventDate,
+				}',
+				'foundedDate',
+				'proJoinDate',
+			];
+		}
+	}
+
+	private function apply_backcompat_fields( $type, $result ) {
+		if ( 'event' === $type ) {
+			$result['time'] = $this->datetime_to_time( $result['dateTime'] ) * 1000;
+		}
+		if ( 'events' === $type ) {
+			foreach ( $result as &$event ) {
+				$event = $this->apply_backcompat_fields( 'event', $event );
+			}
+		}
+
+		if ( 'group' === $type ) {
+			// Stub in the fields that are different.
+			$result['created']            = $this->datetime_to_time( $result['foundedDate'] ) * 1000;
+			$result['localized_location'] = implode( ', ', array_filter( [ $result['city'], $result['state'], strtoupper( $result['country'] ) ] ) ); // Previously: 'City, India'. Now: 'City, IN'
+			$result['members']            = $result['groupAnalytics']['totalMembers'] ?? 0;
+			$result['member_count']       = $result['members'];
+
+			if ( ! empty( $result['proJoinDate'] ) ) {
+				$result['pro_join_date'] = $this->datetime_to_time( $result['proJoinDate'] ) * 1000;
+			}
+
+			if ( ! empty( $result['pastEvents']['edges'] ) ) {
+				$result['last_event']         = [
+					'time'           => $this->datetime_to_time( end( $result['pastEvents']['edges'] )['node']['dateTime'] ) * 1000,
+					'yes_rsvp_count' => end( $result['pastEvents']['edges'] )['node']['going'],
+				];
+			} elseif ( ! empty( $result['groupAnalytics']['lastEventDate'] ) ) {
+				$result['last_event'] = $this->datetime_to_time( $result['groupAnalytics']['lastEventDate'] ) * 1000;
+			}
+		}
+		if ( 'groups' === $type ) {
+			foreach ( $result as &$group ) {
+				$group = $this->apply_backcompat_fields( 'group', $group );
+			}
+		}
+
+		return $result;
 	}
 }
