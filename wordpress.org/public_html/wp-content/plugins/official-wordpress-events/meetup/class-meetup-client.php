@@ -576,7 +576,13 @@ var_dump( compact( 'oauth_token' ) );
 			return $result;
 		}
 
-		return $this->apply_backcompat_fields( 'event', $result['data']['event'] );
+		$event = $result['data']['event'] ?: false;
+
+		if ( $event ) {
+			$event = $this->apply_backcompat_fields( 'event',  $event );
+		}
+
+		return $event;
 	}
 
 	/**
@@ -963,7 +969,7 @@ var_dump( compact( 'oauth_token' ) );
 		return (int) $results['data']['proNetworkByUrlname']['groupsSearch']['count'];
 	}
 
-	private function get_default_fields( $type ) {
+	protected function get_default_fields( $type ) {
 		if ( 'event' === $type ) {
 			// See https://www.meetup.com/api/schema/#Event for valid fields.
 			return [
@@ -982,6 +988,7 @@ var_dump( compact( 'oauth_token' ) );
 				'group {
 					name
 					city
+					state
 					country
 				}',
 				'venue {
@@ -989,6 +996,7 @@ var_dump( compact( 'oauth_token' ) );
 					lng
 					name
 					city
+					state
 					country
 				}'
 			];
@@ -1019,10 +1027,17 @@ var_dump( compact( 'oauth_token' ) );
 		}
 	}
 
-	private function apply_backcompat_fields( $type, $result ) {
+	protected function apply_backcompat_fields( $type, $result ) {
 		if ( 'event' === $type ) {
 			$result['time'] = $this->datetime_to_time( $result['dateTime'] ) * 1000;
+			if ( ! empty( $result['venue'] ) ) {
+				$result['venue']['localized_location'] = $this->localise_location( $result['venue'] );
+			}
+			if ( ! empty( $result['group'] ) ) {
+				$result['group']['localized_location'] = $this->localise_location( $result['group'] );
+			}
 		}
+
 		if ( 'events' === $type ) {
 			foreach ( $result as &$event ) {
 				$event = $this->apply_backcompat_fields( 'event', $event );
@@ -1032,7 +1047,7 @@ var_dump( compact( 'oauth_token' ) );
 		if ( 'group' === $type ) {
 			// Stub in the fields that are different.
 			$result['created']            = $this->datetime_to_time( $result['foundedDate'] ) * 1000;
-			$result['localized_location'] = implode( ', ', array_filter( [ $result['city'], $result['state'], strtoupper( $result['country'] ) ] ) ); // Previously: 'City, India'. Now: 'City, IN'
+			$result['localized_location'] = $this->localise_location( $result );
 			$result['members']            = $result['groupAnalytics']['totalMembers'] ?? 0;
 			$result['member_count']       = $result['members'];
 
@@ -1056,5 +1071,40 @@ var_dump( compact( 'oauth_token' ) );
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Generate a localised location name.
+	 *
+	 * For the US this is 'City, ST, USA'
+	 * For Canada this is 'City, ST, Canada'
+	 * For the rest of world, this is 'City, CountryName'
+	 */
+	protected function localise_location( $args = array() ) {
+		if ( ! class_exists( '\WP_CLDR' ) && file_exists( WP_PLUGIN_DIR . '/wp-cldr/class-wp-cldr.php' ) ) {
+			require WP_PLUGIN_DIR . '/wp-cldr/class-wp-cldr.php';
+		}
+		$cldr    = class_exists( '\WP_CLDR' ) ? new \WP_CLDR() : false;
+
+		$country = $args['country'] ?? '';
+		$state   = $args['country'] ?? '';
+		$city    = $args['city']    ?? '';
+
+		// Set countries to USA, AU, or Australia in that order.
+		$country = strtoupper( $country );
+		if ( 'US' === $country ) {
+			$country = 'USA';
+		} elseif ( $cldr ) {
+			$country = $cldr->get_territory_name( $country ) ?: $country;
+		}
+
+		// Only the USA & Canada have valid states in the response
+		if ( 'US' === $country || 'CA' === $country ) {
+			$state = strtoupper( $state );
+		} else {
+			$state = '';
+		}
+
+		return implode( ', ',  array_filter( [ $city, $state, $country ] ) ) ?: false;
 	}
 }
