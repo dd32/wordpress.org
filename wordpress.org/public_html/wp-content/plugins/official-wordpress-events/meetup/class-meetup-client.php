@@ -1,7 +1,8 @@
 <?php
 namespace WordCamp\Utilities;
 
-use WP_Error, DateTime;
+use DateTime, DateTimeZone;
+use WP_Error;
 
 defined( 'WPINC' ) || die();
 
@@ -63,10 +64,12 @@ class Meetup_Client extends API_Client {
 			 * a `400` response, but then get a `200` response if that exact same request is retried.
 			 */
 			'breaking_response_codes' => array(
+				// TODO: NOTE: These headers are not returned from the GraphQL API, every request is 200 even if throttled.
 				401, // Unauthorized (invalid key).
 				429, // Too many requests (rate-limited).
 				404, // Unable to find group
 			),
+			// NOTE: GraphQL does not expose the Quota Headers.
 			'throttle_callback'       => array( __CLASS__, 'throttle' ),
 		) );
 
@@ -77,7 +80,7 @@ class Meetup_Client extends API_Client {
 			)
 		);
 
-		$this->debug = $settings['debug']; // || true;
+		$this->debug = $settings['debug'];
 
 		if ( $this->debug ) {
 			self::cli_message( "Meetup Client debug is on. Results will be truncated." );
@@ -150,6 +153,11 @@ class Meetup_Client extends API_Client {
 			}
 
 			$new_data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+			if ( ! empty( $new_data['error'] ) ) {
+				$this->handle_error_response( $response, $this->api_url );
+				break;
+			}
 
 			if ( ! is_array( $new_data ) || ! isset( $new_data['data'] ) ) {
 				$this->error->add(
@@ -250,6 +258,7 @@ var_dump( compact( 'oauth_token' ) );
 		}
 
 		return array(
+			'timeout' => 60,
 			'headers' => array(
 				'Accept'        => 'application/json',
 				'Content-Type'  => 'application/json',
@@ -268,6 +277,11 @@ var_dump( compact( 'oauth_token' ) );
 	 */
 	protected static function throttle( $response ) {
 		$headers = wp_remote_retrieve_headers( $response );
+
+		/*
+		 * NOTE: This is not in use, as GraphQL API doesn't return rate limit headers,
+		 *       but does throttle requests & fail if you exceed it.
+		 */
 
 		if ( ! isset( $headers['x-ratelimit-remaining'], $headers['x-ratelimit-reset'] ) ) {
 			return;
@@ -480,7 +494,7 @@ var_dump( compact( 'oauth_token' ) );
 
 		$result = $this->send_paginated_request( $query, $variables );
 
-		if ( is_wp_error( $result ) || ! isset( $result['data']['proNetworkByUrlname']['groupsSearch'] ) ) {
+		if ( is_wp_error( $result ) || ! array_key_exists( 'groupsSearch', $result['data']['proNetworkByUrlname'] ) ) {
 			return $result;
 		}
 
@@ -734,7 +748,7 @@ var_dump( compact( 'oauth_token' ) );
 		$filters = [];
 
 		if ( $args['min_event_date'] ) {
-			$filters[] = 'eventDateMin: ' . $this->datetime_to_time( $args['max_event_date'] ) * 1000;
+			$filters[] = 'eventDateMin: ' . $this->datetime_to_time( $args['min_event_date'] ) * 1000;
 		}
 		if ( $args['max_event_date'] ) {
 			$filters[] = 'eventDateMax: ' . $this->datetime_to_time( $args['max_event_date'] ) * 1000;
@@ -768,13 +782,19 @@ var_dump( compact( 'oauth_token' ) );
 		}';
 		$variables = [
 			'urlname' => 'wordpress',
-			'perPage' => 2,
+			'perPage' => 200,
 			'cursor'  => null,
 		];
 
-		$results = $this->send_paginated_request( $query, $variables, false );
-		if ( is_wp_error( $results ) || ! isset( $results['data']['proNetworkByUrlname']['eventsSearch'] ) ) {
+
+		$results = $this->send_paginated_request( $query, $variables );
+
+		if ( is_wp_error( $results ) || ! array_key_exists( 'eventsSearch', $results['data']['proNetworkByUrlname'] ) ) {
 			return $results;
+		}
+
+		if ( empty( $results['data']['proNetworkByUrlname']['eventsSearch'] ) ) {
+			return [];
 		}
 
 		// Select edges[*].node
@@ -782,6 +802,8 @@ var_dump( compact( 'oauth_token' ) );
 			$results['data']['proNetworkByUrlname']['eventsSearch']['edges'],
 			'node'
 		);
+
+		$results = $this->apply_backcompat_fields( 'events', $results );
 
 		return $results;
 
@@ -980,18 +1002,16 @@ var_dump( compact( 'oauth_token' ) );
 				'status',
 				'timeStatus',
 				'dateTime',
-				'duration',
+				'timezone',
 				'endTime',
 				'createdAt',
 				'isOnline',
 				'going',
 				'group {
-					name
-					city
-					state
-					country
+					' . implode( ' ', $this->get_default_fields( 'group' ) ) . '
 				}',
 				'venue {
+					id
 					lat
 					lng
 					name
@@ -1023,19 +1043,59 @@ var_dump( compact( 'oauth_token' ) );
 				}',
 				'foundedDate',
 				'proJoinDate',
+				'latitude',
+				'longitude',
 			];
 		}
 	}
 
 	protected function apply_backcompat_fields( $type, $result ) {
 		if ( 'event' === $type ) {
-			$result['time'] = $this->datetime_to_time( $result['dateTime'] ) * 1000;
+
+			$result['name'] = $result['title'];
+
+			if ( ! empty( $result['dateTime'] ) ) {
+				$result['time'] = $this->datetime_to_time( $result['dateTime'] ) * 1000;
+			}
+
+			$result['duration'] = 0;
+			if ( ! empty( $result['endTime'] ) ) {
+				$result['duration'] = ( $this->datetime_to_time( $result['endTime'] ) -  $this->datetime_to_time( $result['dateTime'] ) );
+				$result['duration'] *= 1000;
+			}
+
+			$result['utc_offset'] = 0;
+			if ( ! empty( $result['timezone'] ) && isset( $result['time'] ) ) {
+				$result['utc_offset'] = (
+					new DateTime(
+						gmdate( 'Y-m-d H:i:s', $result['time']/1000 ),
+						new DateTimeZone( $result['timezone'] )
+					)
+				)->getOffset();
+			}
+
 			if ( ! empty( $result['venue'] ) ) {
 				$result['venue']['localized_location'] = $this->localise_location( $result['venue'] );
+				$result['venue']['localized_country_name'] = $this->localised_country_name( $result['venue']['country'] );
+
+				// Seriously.
+				if ( ! empty( $result['venue']['lng'] ) ) {
+					$result['venue']['lon'] = $result['venue']['lng'];
+				}
 			}
 			if ( ! empty( $result['group'] ) ) {
-				$result['group']['localized_location'] = $this->localise_location( $result['group'] );
+				//$result['group']['localized_location'] = $this->localise_location( $result['group'] );
+				//$result['group']['localized_country_name'] = $this->localised_country_name( $result['group']['country'] );
+				$result['group'] = $this->apply_backcompat_fields( 'group', $result['group'] );
 			}
+
+			$result['status'] = strtolower( $result['status'] );
+			if ( in_array( $result['status'], [ 'published', 'past', 'active', 'autosched' ] ) ) {
+				$result['status'] = 'upcoming'; // Right, past is upcoming.
+			}
+
+			$result['yes_rsvp_count'] = $result['going'];
+			$result['link']           = $result['eventUrl'];
 		}
 
 		if ( 'events' === $type ) {
@@ -1046,10 +1106,11 @@ var_dump( compact( 'oauth_token' ) );
 
 		if ( 'group' === $type ) {
 			// Stub in the fields that are different.
-			$result['created']            = $this->datetime_to_time( $result['foundedDate'] ) * 1000;
-			$result['localized_location'] = $this->localise_location( $result );
-			$result['members']            = $result['groupAnalytics']['totalMembers'] ?? 0;
-			$result['member_count']       = $result['members'];
+			$result['created']                = $this->datetime_to_time( $result['foundedDate'] ) * 1000;
+			$result['localized_location']     = $this->localise_location( $result );
+			$result['localized_country_name'] = $this->localised_country_name( $result['country'] );
+			$result['members']                = $result['groupAnalytics']['totalMembers'] ?? 0;
+			$result['member_count']           = $result['members'];
 
 			if ( ! empty( $result['proJoinDate'] ) ) {
 				$result['pro_join_date'] = $this->datetime_to_time( $result['proJoinDate'] ) * 1000;
@@ -1063,6 +1124,9 @@ var_dump( compact( 'oauth_token' ) );
 			} elseif ( ! empty( $result['groupAnalytics']['lastEventDate'] ) ) {
 				$result['last_event'] = $this->datetime_to_time( $result['groupAnalytics']['lastEventDate'] ) * 1000;
 			}
+		
+			$result['lat'] = $result['latitude'];
+			$result['lon'] = $result['longitude'];
 		}
 		if ( 'groups' === $type ) {
 			foreach ( $result as &$group ) {
@@ -1081,22 +1145,10 @@ var_dump( compact( 'oauth_token' ) );
 	 * For the rest of world, this is 'City, CountryName'
 	 */
 	protected function localise_location( $args = array() ) {
-		if ( ! class_exists( '\WP_CLDR' ) && file_exists( WP_PLUGIN_DIR . '/wp-cldr/class-wp-cldr.php' ) ) {
-			require WP_PLUGIN_DIR . '/wp-cldr/class-wp-cldr.php';
-		}
-		$cldr    = class_exists( '\WP_CLDR' ) ? new \WP_CLDR() : false;
-
 		$country = $args['country'] ?? '';
-		$state   = $args['country'] ?? '';
+		$state   = $args['state']   ?? '';
 		$city    = $args['city']    ?? '';
-
-		// Set countries to USA, AU, or Australia in that order.
 		$country = strtoupper( $country );
-		if ( 'US' === $country ) {
-			$country = 'USA';
-		} elseif ( $cldr ) {
-			$country = $cldr->get_territory_name( $country ) ?: $country;
-		}
 
 		// Only the USA & Canada have valid states in the response
 		if ( 'US' === $country || 'CA' === $country ) {
@@ -1105,6 +1157,31 @@ var_dump( compact( 'oauth_token' ) );
 			$state = '';
 		}
 
+		// Set countries to USA, AU, or Australia in that order.
+		$country = $this->localised_country_name( $country );
+
 		return implode( ', ',  array_filter( [ $city, $state, $country ] ) ) ?: false;
+	}
+
+	protected function localised_country_name( $country ) {
+		$localised_country = '';
+		$country           = strtoupper( $country );
+
+		// Shortcut.
+		if ( 'US' === $country ) {
+			return 'USA';
+		}
+
+		if ( ! class_exists( '\WP_CLDR' ) && file_exists( WP_PLUGIN_DIR . '/wp-cldr/class-wp-cldr.php' ) ) {
+			require WP_PLUGIN_DIR . '/wp-cldr/class-wp-cldr.php';
+		}
+
+		if ( class_exists( '\WP_CLDR' ) ) {
+			$cldr = new \WP_CLDR();
+
+			$localised_country = $cldr->get_territory_name( $country );
+		}
+
+		return $localised_country ?: $country;
 	}
 }
