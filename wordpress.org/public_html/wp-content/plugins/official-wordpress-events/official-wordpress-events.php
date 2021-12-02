@@ -561,25 +561,14 @@ class Official_WordPress_Events {
 			return $events;
 		}
 
-		$groups = $meetup_client->get_groups();
-		if ( ! empty( $meetup_client->error->errors ) ) {
-			$this->log( 'Failed to fetch groups: ' . wp_json_encode( $meetup_client->error ), true );
-			return $events;
-		}
-
-		$this->log( sprintf( 'received %d meetup groups', count( $groups ) ) );
-
-		$yesterday    = date( 'c', strtotime( '-1 day' ) );
-		$one_year_out = date( 'c', strtotime( '+1 year' ) );
-		$meetups      = $meetup_client->get_events(
-			wp_list_pluck( $groups, 'urlname' ),
+		$meetups = $meetup_client->get_network_events(
 			array(
 				// We want cancelled events too so they will be updated in our database table.
-				'status'          => 'upcoming,cancelled',
+				'status'         => false, // We want PAST, UPCOMING, CANCELLED
 				// We don't want cancelled events in the past, but need some leeway here for timezones.
-				'no_earlier_than' => substr( $yesterday, 0, strpos( $yesterday, '+' ) ),
+				'min_event_date' => strtotime( '-1 day' ),
 				// We don't need to cache events happening more than a year from now.
-				'no_later_than'   => substr( $one_year_out, 0, strpos( $one_year_out, '+' ) ),
+				'max_event_date' => strtotime( '+1 year' ),
 			)
 		);
 		if ( ! empty( $meetup_client->error->errors ) ) {
@@ -762,6 +751,10 @@ class Official_WordPress_Events {
 
 		if ( isset( $venue['id'] ) && 26906060 === $venue['id'] ) {
 			return 'online';
+		}
+
+		if ( !empty( $venue['localized_location'] ) ) {
+			return $venue['localized_location'];
 		}
 
 		foreach ( array( 'city', 'state', 'localized_country_name' ) as $part ) {
