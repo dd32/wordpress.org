@@ -1,0 +1,23 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 2,
+	"name": "plugin-directory/security-reporting",
+	"version": "0.1.0",
+	"title": "Plugin Directory Security Reporting",
+	"category": "widgets",
+	"icon": "lock",
+	"supports": {
+		"html": false
+	},
+	"attributes": {
+		"userId": {
+			"type": "integer"
+		}
+	},
+	"textdomain": "wporg-plugins",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"viewScript": [ "file:./script.js" ],
+	"style": [ "file:./style-index.css", "wp-components" ],
+	"render": "file:./render.php"
+}

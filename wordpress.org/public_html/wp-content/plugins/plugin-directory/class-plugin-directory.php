@@ -32,6 +32,7 @@ class Plugin_Directory {
 		add_action( 'init', array( $this, 'init' ) );
 		add_action( 'init', array( $this, 'register_shortcodes' ) );
 		add_action( 'init', array( $this, 'remove_other_shortcodes' ), 999 );
+		add_action( 'plugins_loaded', array( $this, 'register_blocks' ) );
 		add_action( 'widgets_init', array( $this, 'register_widgets' ) );
 		add_filter( 'post_type_link', array( $this, 'filter_post_type_link' ), 10, 2 );
 		add_filter( 'term_link', array( $this, 'filter_term_link' ), 10, 2 );
@@ -590,6 +591,13 @@ class Plugin_Directory {
 
 		// remove special embed shortcode handling
 		remove_filter( 'the_content', array( $GLOBALS['wp_embed'], 'run_shortcode' ), 8 );
+	}
+
+	/**
+	 * Load all blocks.
+	 */
+	public function register_blocks() {
+		include_once __DIR__ . '/blocks/security-reporting/security-reporting.php';
 	}
 
 	/**

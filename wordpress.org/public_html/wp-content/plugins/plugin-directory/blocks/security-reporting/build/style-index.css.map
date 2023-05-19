@@ -1,0 +1,1 @@
+{"version":3,"file":"./style-index.css","mappings":";;;AACC;EACC;AAAF;AAGC;EACC;AADF,C","sources":["webpack://plugin-directory-security-reporting/./src/style.scss"],"sourcesContent":[".wp-block-plugin-directory-security-reporting {\n\t.components-card-header {\n\t\tjustify-content: center;\n\t}\n\n\t.next {\n\t\ttext-align: right;\n\t}\n}"],"names":[],"sourceRoot":""}
