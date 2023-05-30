@@ -235,7 +235,7 @@ class SVN {
 	 *
 	 * @static
 	 *
-	 * @param string $checkout The local folder to import into SVN.
+	 * @param string $checkout The local SVN checkout.
 	 * @param string $message  The commit message.
 	 * @param array  $options  Any specific options to pass to SVN.
 	 * @return array {
@@ -357,6 +357,30 @@ class SVN {
 		}
 
 		return $files;
+	}
+
+	/**
+	 * List the files in a remote SVN destination.
+	 *
+	 * @static
+	 *
+	 * @param string $checkout The local SVN checkout.
+	 * @param array  $options  The Merge options.
+	 * @return array If non-verbose a list of files, if verbose an array of items containing the filename, date,
+	 *               filesize, author and revision.
+	 */
+	public static function merge( $checkout, $options = [] ) {
+		$options[] = 'non-interactive';
+
+		$esc_options  = self::parse_esc_parameters( $options );
+		$esc_checkout = escapeshellarg( $checkout );
+
+		$output = self::shell_exec( "cd $esc_checkout; svn merge . $esc_options 2>&1" );
+		$errors = self::parse_svn_errors( $output );
+
+		var_dump( compact( 'output', 'errors' ) );
+
+		return ! $errors;
 	}
 
 	/**
