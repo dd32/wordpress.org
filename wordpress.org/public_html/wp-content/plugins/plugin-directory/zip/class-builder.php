@@ -208,7 +208,7 @@ class Builder {
 		SVN::up( $this->checksum_file );
 
 		// Existing checksums?
-		$existing_json_checksum_file = file_exists( $this->checksum_file );
+		$existing_json_checksum_file = file_exists( $this->checksum_file ) ? json_decode( file_get_contents( $this->checksum_file ) ) : false;
 
 		$skip_bad_files = array();
 		$checksums      = array();
@@ -247,10 +247,16 @@ class Builder {
 				}
 
 				$checksums[ $filename ][ $checksum_type ] = $checksum;
+
+				// If the checksums have already been generated, and this file did not previously exist, it's just been added and therefor is optional.
+				if ( ! empty( $existing_json_checksum_file->files ) && ! isset( $existing_json_checksum_file->files->$filename ) ) {
+					$checksums[ $filename ]['optional'] = true;
+				}
 			}
 		}
 
 		$json_checksum_file = (object) array(
+			'format'  => 2,
 			'plugin'  => $this->slug,
 			'version' => $plugin_version,
 			'source'  => $this->plugin_version_svn_url,
@@ -260,8 +266,6 @@ class Builder {
 
 		// If the checksum file exists already, merge it into this one.
 		if ( $existing_json_checksum_file ) {
-			$existing_json_checksum_file = json_decode( file_get_contents( $this->checksum_file ) );
-
 			// Sometimes plugin versions exist in multiple tags/zips, include all the SVN urls & ZIP urls
 			foreach ( array( 'source', 'zip' ) as $maybe_different ) {
 				if ( ! empty( $existing_json_checksum_file->{$maybe_different} ) &&
@@ -291,6 +295,9 @@ class Builder {
 
 					// Deleted file, use existing checksums.
 					$json_checksum_file->files[ $file ] = $checksums;
+
+					// Flag the file as optional, it was present, but now it's gone.
+					$json_checksum_file->files[ $file ]->optional = true;
 
 				} elseif ( $checksums !== $json_checksum_file->files[ $file ] ) {
 					// Checksum has changed, include both in the resulting json file.
@@ -378,6 +385,7 @@ class Builder {
 			$res                          = SVN::export( $this->plugin_version_svn_url, $build_dir, $svn_params );
 		}
 		if ( ! $res['result'] ) {
+			var_dump( $res );
 			throw new Exception( __METHOD__ . ': ' . $res['errors'][0]['error_message'], 404 );
 		}
 
