@@ -64,6 +64,8 @@ class Author_Notice {
 		}
 		?>
 
+<button id="author-notice-bounce" class="button" style="float:right"><?php esc_html_e( 'Guideline Violation: Bounce', 'wporg-plugins' ); ?></button>
+
 		<div id="author-notice-texteditable" class="inline notice notice-alt notice-<?php echo esc_attr( $notice['type'] ); ?>" contentEditable="true">
 			<?php echo wp_kses( $notice['html'], self::ALLOWED_TAGS ); ?>
 		</div>
@@ -87,6 +89,18 @@ class Author_Notice {
 
 					// Update the hidden input value with the HTML.
 					$( '#author-notice' ).val( $( this ).html() );
+				} );
+				$('#author-notice-bounce').click( function(e) {
+					e.preventDefault();
+
+					$( '#author-notice-select' ).val('error').change();
+					$( '#close_reason' ).val( 'guideline-violation' );
+					$( 'button[name="post_status"][value="closed"]').addClass( 'button-primary' );
+					$( '#author-notice-texteditable' ).html(
+						'<p><strong>Guideline Violation:</strong> Your email address is bouncing. Please correct your account email address and email plugins@wordpress.org.</p>' +
+						'<pre>DIAG</pre>'
+					);
+					$('#publish').removeClass('button-primary');
 				} );
 			} );
 		</script>
