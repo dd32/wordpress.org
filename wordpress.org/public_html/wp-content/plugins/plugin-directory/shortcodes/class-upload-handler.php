@@ -19,28 +19,28 @@ class Upload_Handler {
 	 *
 	 * @var string
 	 */
-	protected $plugin_dir;
+	public $plugin_dir;
 
 	/**
 	 * Path to the detected plugins files.
 	 *
 	 * @var string
 	 */
-	protected $plugin_root;
+	public $plugin_root;
 
 	/**
 	 * The uploaded plugin headers.
 	 *
 	 * @var array
 	 */
-	protected $plugin;
+	public $plugin;
 
 	/**
 	 * The plugin slug.
 	 *
 	 * @var string
 	 */
-	protected $plugin_slug;
+	public $plugin_slug;
 
 	/**
 	 * Get set up to run tests on the uploaded plugin.

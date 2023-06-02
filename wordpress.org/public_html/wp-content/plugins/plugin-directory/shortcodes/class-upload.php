@@ -166,7 +166,61 @@ class Upload {
 						<?php
 						// List of all plugins in progress.
 						foreach ( $submitted_plugins as $plugin ) {
-							echo '<li>' . esc_html( $plugin->post_title ) . ' &#8212; ' . $plugin->status . "</li>\n";
+							$can_change_slug = ! $plugin->{'_wporg_plugin_original_slug'};
+
+							echo '<li>' . esc_html( $plugin->post_title ) . ' &#8212; ' . $plugin->status;
+								echo '<ul>';
+								echo '<li>';
+								printf(
+									__( 'Initial assigned slug: %s', 'wporg-plugins' ),
+									'<code>' . esc_html( $plugin->post_name ) . '</code>'
+								);
+								?>
+								<?php if ( $can_change_slug ) : ?>
+									&nbsp;
+									<small><a href="#" class="hide-if-no-js" onclick="this.parentElement.nextElementSibling.showModal()">(<?php _e( 'request change', 'wporg-plugins' ); ?>)</a></small>
+									<dialog class="slug-change hide-if-no-js">
+										<a onclick="this.parentNode.close()" class="close dashicons dashicons-no-alt"></a>
+										<strong><?php _e( 'Request to change your plugin slug', 'wporg-plugins' ); ?></strong>
+										<form>
+											<input type="hidden" name="action" value="request-slug-change" />
+											<input type="hidden" name="id" value="<?php echo esc_attr( $plugin->ID ); ?>" />
+
+											<div class="notice notice-info notice-alt">
+												<p><?php _e( 'Your chosen slug cannot be guaranteed, and is subject to change based on the results of your review.', 'wporg-plugins' ); ?></p>
+												<p><?php _e( 'Your slug (aka permalink) cannot be changed once your review is completed. Please choose carefully.', 'wporg-plugins' ); ?></p>
+											</div>
+											<div class="notice notice-error notice-alt hidden"><p></p></div>
+											<p>
+												<label>
+													<strong><?php _e( 'Plugin Name', 'wporg-plugins' ); ?></strong><br>
+													<?php echo esc_html( $plugin->post_title ); ?>
+												</label>
+											</p>
+											<p>
+												<label>
+													<strong><?php _e( 'Desired Slug', 'wporg-plugins' ); ?></strong><br>
+													<input type="text" name="post_name" required maxlength="200" value="<?php echo esc_attr( $plugin->post_name ); ?>" />
+												</label>
+											</p>
+
+											<p>
+												<label>
+													<input type="checkbox" name="confirm" required />
+													<?php _e( 'I confirm that my slug choice meets the guidelines.', 'wporg-plugins' ); ?>
+												</label>
+											</p>
+											<p>
+												<input class="button button-primary" type="submit" value="<?php esc_attr_e( 'Request', 'wporg-plugins' ); ?>" />
+											</p>
+										</form>
+									</dialog>
+								<?php
+								endif; // $can_change_slug
+								echo '</li>';
+								echo '</ul>';
+							
+							echo "</li>\n";
 						}
 						?>
 						</ul>
