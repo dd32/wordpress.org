@@ -166,6 +166,7 @@ function render() {
 	// Allow super-admins to set the teams the site users can invite for.
 	if ( is_super_admin() ) {
 		?>
+		<hr>
 		<h1>Settings</h1>
 		<form method="post" action="<?php echo admin_url( 'admin-post.php' ) ?>">
 			<input type="hidden" name="action" value="github_invite_settings">
@@ -259,16 +260,16 @@ add_action( 'admin_post_github_invite', function() {
 
 	check_admin_referer( 'github_invite' );
 
-	$input = wp_unslash( $_POST['invite'] );
-	$teams  = (array) wp_unslash( $_POST['team_id'] );
-	$teams  = array_intersect( $teams, get_allowed_teams() );
-	$teams  = array_map( 'intval', $teams );
+	$input    = wp_unslash( $_POST['invite'] );
+	$team_ids = (array) wp_unslash( $_POST['team_id'] );
+	$team_ids = array_intersect( $team_ids, get_allowed_teams() );
+	$team_ids = array_map( 'intval', $team_ids );
 
 	$updated = 'success';
 	$message = null;
 	$invite  = false;
 
-	if ( ! $teams ) {
+	if ( ! $team_ids ) {
 		$updated = 'error';
 		$message = 'No teams selected';
 	} elseif ( preg_match( '!^https://profiles.wordpress.org/(?<slug>[^/]+)!i', $input, $m ) ) {
@@ -290,14 +291,30 @@ add_action( 'admin_post_github_invite', function() {
 	}
 
 	if ( $invite ) {
-		$result = invite_member( $invite, $teams );
+		$result = invite_member( $invite, $team_ids );
 
 		if ( $result->id ) {
+			// Note that it was invited via this site..
 			$invited_gh_users = get_option( 'invited_gh_users', [] );
 			$invited_gh_users[] = $result->id;
 			update_option( 'invited_gh_users', $invited_gh_users );
 
 			delete_site_transient( 'gh_invites' );
+
+			// Log it to Slack.
+			$teams          = get_teams();
+			$readable_teams = array_map( static function( $id ) use( $teams ) {
+				return array_values( wp_list_filter( $teams, [ 'id' => $id ] ) )[0]->name ?? $id;
+			}, $team_ids );
+
+			$log = sprintf(
+				'%s invited to organisation by %s to team(s) %s',
+				$result->login ?: $result->email,
+				wp_get_current_user()->user_login,
+				implode( ', ', $readable_teams )
+			);
+
+			slack_dm( $log ); // , GH_INVITE_SLACK_GITHUBADMINS );
 		}
 
 		if ( isset( $result->errors ) ) {
@@ -349,6 +366,8 @@ add_action( 'admin_post_github_cancel_invite', function() {
 	check_admin_referer( 'github_cancel_invite_' . $id );
 
 	cancel_invite( $id );
+
+	delete_site_transient( 'gh_invites' );
 
 	wp_safe_redirect( admin_url( 'tools.php?page=gh_invite_collaborator&updated=canceled' ) );
 	die();
