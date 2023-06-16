@@ -34,7 +34,7 @@ add_action(
 );
 
 function render() {
-	$allowed_teams = get_option( 'gh_invite_allowed_teams', array() );
+	$allowed_teams = get_allowed_teams();
 	$all_teams     = get_teams();
 	$teams         = [];
 
@@ -231,6 +231,19 @@ function render_team_list( $teams, $checked = array(), $for_parent = 0 ) {
 	}
 }
 
+/**
+ * Get the allowed teams for this site.
+ */
+function get_allowed_teams() {
+	$allowed_teams = array_map( 'intval', get_option( 'gh_invite_allowed_teams', array() ) );
+
+	// Some teams cannot be selected.
+	$never = [
+		1114244, // Security team.
+	];
+
+	return array_diff( $allowed_teams, $never );
+}
 
 /* POST Handlers */
 
@@ -248,7 +261,7 @@ add_action( 'admin_post_github_invite', function() {
 
 	$input = wp_unslash( $_POST['invite'] );
 	$teams  = (array) wp_unslash( $_POST['team_id'] );
-	$teams  = array_intersect( $teams, get_option( 'gh_invite_allowed_teams', array() ) );
+	$teams  = array_intersect( $teams, get_allowed_teams() );
 	$teams  = array_map( 'intval', $teams );
 
 	$updated = 'success';
