@@ -370,7 +370,17 @@ add_action( 'admin_post_github_cancel_invite', function() {
 
 	check_admin_referer( 'github_cancel_invite_' . $id );
 
+	$invite = array_values( wp_list_filter( get_pending_invites(), [ 'id' => $id ] ) )[0] ?? null;
+
 	cancel_invite( $id );
+
+	// Log it to Slack.
+	$log = sprintf(
+		'%s invite canceled by %s.',
+		$invite->login ?: $invite->email,
+		wp_get_current_user()->user_login,
+	);
+	slack_dm( $log ); // , GH_INVITE_SLACK_GITHUBADMINS );
 
 	delete_site_transient( 'gh_invites' );
 
