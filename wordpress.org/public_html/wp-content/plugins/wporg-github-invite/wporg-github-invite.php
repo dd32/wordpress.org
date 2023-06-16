@@ -241,6 +241,7 @@ function get_allowed_teams() {
 	// Some teams cannot be selected.
 	$never = [
 		1114244, // Security team.
+		80104, // Another special team
 	];
 
 	return array_diff( $allowed_teams, $never );
