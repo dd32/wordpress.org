@@ -215,7 +215,7 @@ function render_team_list( $teams, $checked = array(), $for_parent = 0 ) {
 					value="<?php echo esc_attr( $team->id ) ?>"
 					<?php
 						checked( in_array( $team->id, $checked ) );
-						disabled( !empty( $team->disabled ) );
+						disabled( ! empty( $team->disabled ) || in_array( $team->id, get_never_teams() ) );
 					?>
 				/>
 				<?php echo esc_html( $team->name ) ?>
@@ -238,13 +238,17 @@ function render_team_list( $teams, $checked = array(), $for_parent = 0 ) {
 function get_allowed_teams() {
 	$allowed_teams = array_map( 'intval', get_option( 'gh_invite_allowed_teams', array() ) );
 
-	// Some teams cannot be selected.
-	$never = [
+	return array_diff( $allowed_teams, get_never_teams() );
+}
+
+/**
+ * A list of teams that should never be selected.
+ */
+function get_never_teams() {
+	return [
 		1114244, // Security team.
 		80104, // Another special team
 	];
-
-	return array_diff( $allowed_teams, $never );
 }
 
 /* POST Handlers */
