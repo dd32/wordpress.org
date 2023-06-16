@@ -137,7 +137,7 @@ function render() {
 				<th scope="row">Pending Invitations</th>
 				<td>
 					<?php
-					$pending_invites = api( '/orgs/' . ORG . '/invitations' );
+					$pending_invites = get_pending_invites();
 					if ( ! $pending_invites ) {
 						echo '<em>No pending invitations</em>';
 					}
@@ -296,6 +296,8 @@ add_action( 'admin_post_github_invite', function() {
 			$invited_gh_users = get_option( 'invited_gh_users', [] );
 			$invited_gh_users[] = $result->id;
 			update_option( 'invited_gh_users', $invited_gh_users );
+
+			delete_site_transient( 'gh_invites' );
 		}
 
 		if ( isset( $result->errors ) ) {
@@ -401,14 +403,28 @@ function api( $endpoint, $body = false, $method = '' ) {
  * Fetch the teams from the WordPress GitHub organization
  */
 function get_teams() {
-	$teams = get_site_transient( 'gh_teams', [] );
-	if ( ! $teams ) {
+	$teams = get_site_transient( 'gh_teams', false );
+	if ( false === $teams ) {
 		$teams = api( '/orgs/' . ORG . '/teams?per_page=100' );
 
 		set_site_transient( 'gh_teams', $teams, 5 * MINUTE_IN_SECONDS );
 	}
 
 	return $teams;
+}
+
+/**
+ * Fetch the pending invites from the WordPress GitHub organization
+ */
+function get_pending_invites() {
+	$invites = get_site_transient( 'gh_invites', false );
+	if ( false === $invites ) {
+		$invites = api( '/orgs/' . ORG . '/invitations' );
+
+		set_site_transient( 'gh_invites', $invites, 5 * MINUTE_IN_SECONDS );
+	}
+
+	return $invites;
 }
 
 /**
