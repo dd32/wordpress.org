@@ -27,7 +27,10 @@ add_action( 'admin_post_github_invite', function() {
 	if ( ! $team_ids ) {
 		$updated = 'error';
 		$message = 'No teams selected';
-	} elseif ( ! is_email( $input ) || preg_match( '!^https://profiles.wordpress.org/(?<slug>[^/]+)!i', $input, $m ) ) {
+	} elseif (
+		preg_match( '!^https://profiles.wordpress.org/(?<slug>[^/]+)!i', $input, $m ) ||
+		! is_email( $input )
+	) {
 		$user           = get_user_by( 'slug', $m['slug'] ?? $input );
 		$github_details = json_decode( $wpdb->get_var( $wpdb->prepare(
 			'SELECT user_details FROM wporg_github_users WHERE user_id = %d',
