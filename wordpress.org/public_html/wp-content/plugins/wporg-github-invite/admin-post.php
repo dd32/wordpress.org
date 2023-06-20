@@ -37,7 +37,7 @@ add_action( 'admin_post_github_invite', function() {
 			$user->ID
 		) ) );
 
-		if ( ! $user || ! $github_details || ! $invite ) {
+		if ( ! $user || ! $github_details ) {
 			$updated = 'no-github';
 		} else {
 			$invite = $github_details->id;
@@ -66,13 +66,13 @@ add_action( 'admin_post_github_invite', function() {
 			}, $team_ids );
 
 			$log = sprintf(
-				'%s invited to organisation by %s to team(s) %s',
+				'`%s` invited to organisation by `%s` to team(s) `%s`',
 				$result->login ?: $result->email,
 				wp_get_current_user()->user_login,
 				implode( ', ', $readable_teams )
 			);
 
-			slack_dm( $log, SLACK_CHANNEL );
+			function_exists( 'slack_dm' ) && slack_dm( $log, SLACK_CHANNEL );
 		}
 
 		if ( isset( $result->errors ) ) {
@@ -100,7 +100,7 @@ add_action( 'admin_post_github_cancel_invite', function() {
 		wp_die( 'You do not have permission to do this' );
 	}
 
-	$id = wp_unslash( $_GET['invite'] );
+	$id = (int) wp_unslash( $_GET['invite'] );
 
 	check_admin_referer( 'github_cancel_invite_' . $id );
 
@@ -110,11 +110,11 @@ add_action( 'admin_post_github_cancel_invite', function() {
 
 	// Log it to Slack.
 	$log = sprintf(
-		'%s invite canceled by %s.',
+		'`%s` invite canceled by `%s`.',
 		$invite->login ?: $invite->email,
-		wp_get_current_user()->user_login,
+		wp_get_current_user()->user_login
 	);
-	slack_dm( $log, SLACK_CHANNEL );
+	function_exists( 'slack_dm' ) && slack_dm( $log, SLACK_CHANNEL );
 
 	delete_site_transient( 'gh_invites' );
 

@@ -3,7 +3,7 @@ namespace WordPressdotorg\GitHub\MakeInviter;
 
 /**
  * Plugin Name:       GitHub Invite Member
- * Description:       Invite Members to the WordPress organization
+ * Description:       Invite Members to the WordPress organization.
  * Requires at least: 6.1
  * Requires PHP:      7.4
  * Version:           1.0.0
@@ -18,7 +18,7 @@ namespace WordPressdotorg\GitHub\MakeInviter;
 
 const APP_ID        = \GH_INVITE_APP_ID;
 const KEY           = \GH_INVITE_KEY;
-const SLACK_CHANNEL = \GH_INVITE_SLACK_GITHUBADMINS
+const SLACK_CHANNEL = \GH_INVITE_SLACK_GITHUBADMINS;
 
 // Add the menu item.
 add_action( 'admin_menu', function() {
