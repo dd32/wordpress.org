@@ -97,7 +97,7 @@ echo do_blocks( '<!-- wp:wporg/global-header /-->' ); // phpcs:ignore
 					if ( ! is_home() && $browse = get_query_var( 'browse' ) ) {
 						$url = home_url( "/browse/{$browse}/" );
 					} elseif ( is_search() ) {
-						$url = home_url( '/search/' . get_query_var( 's' ) . '/' );
+						$url = home_url( '/search/' . urlencode( get_query_var( 's' ) ) . '/' );
 					}
 					if ( $slug ) {
 						$url = add_query_arg( array( 'plugin_business_model' => $slug ), $url );
