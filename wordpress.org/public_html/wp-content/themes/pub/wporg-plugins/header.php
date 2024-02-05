@@ -33,7 +33,7 @@ $is_favs = 'favorites' === $wp_query->get( 'browse' );
 // - singular: not relevant on pages or individual plugins.
 // - beta: likely unnecessary, these are probably all "community".
 // - favorites: not necessary.
-$show_filter_bar = ! ( is_search() || is_singular() || $is_beta || $is_favs );
+$show_filter_bar = ! ( is_singular() || $is_beta || $is_favs );
 
 echo do_blocks( '<!-- wp:wporg/global-header /-->' ); // phpcs:ignore
 
@@ -96,6 +96,8 @@ echo do_blocks( '<!-- wp:wporg/global-header /-->' ); // phpcs:ignore
 					// If a browse view, use that as the base.
 					if ( ! is_home() && $browse = get_query_var( 'browse' ) ) {
 						$url = home_url( "/browse/{$browse}/" );
+					} elseif ( is_search() ) {
+						$url = home_url( '/search/' . get_query_var( 's' ) . '/' );
 					}
 					if ( $slug ) {
 						$url = add_query_arg( array( 'plugin_business_model' => $slug ), $url );
