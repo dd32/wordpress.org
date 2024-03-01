@@ -1,5 +1,8 @@
 <?php
 use WordPressdotorg\Plugin_Directory\Template;
+use WP_Query;
+
+global $wp_query;
 
 $sections = array(
     'blocks'    => __( 'Block-Enabled Plugins', 'wporg-plugins' ),
@@ -53,15 +56,16 @@ $widget_args = array(
 				];
 			}
 
-			$section_query = new \WP_Query( $section_args );
+			$wp_query = new WP_Query( $section_args );
 
 			// If the user doesn't have any favorites, omit the section.
-			if ( 'favorites' === $browse && ! $section_query->have_posts() ) {
+			if ( 'favorites' === $browse && ! $wp_query->have_posts() ) {
+				wp_reset_query();
 				continue;
 			}
 			?>
 
-			<section class="plugin-section">
+			<section class="plugin-section plugin-cards">
 				<header class="section-header">
 					<h2 class="section-title"><?php echo esc_html( $section_title ); ?></h2>
 					<a class="section-link" href="<?php echo esc_url( home_url( "browse/$browse/" ) ); ?>">
@@ -76,15 +80,23 @@ $widget_args = array(
 				</header>
 
 				<?php
-				while ( $section_query->have_posts() ) :
-					$section_query->the_post();
-
-					get_template_part( 'template-parts/plugin', 'index' );
-				endwhile;
+					echo do_blocks( <<<BLOCKS
+						<!-- wp:query {"tagName":"div","className":"alignfull","layout":{"type":"constrained"}} -->
+						<div class="wp-block-query alignfull">
+							<!-- wp:post-template {"className":"plugin-cards"} -->
+								<!-- wp:wporg/plugin-card /-->
+							<!-- /wp:post-template -->
+						</div>
+						<!-- /wp:query -->
+						BLOCKS
+					);
 				?>
 			</section>
 
-		<?php endforeach; ?>
+		<?php
+		wp_reset_query();
+		endforeach;
+		?>
 
 	</main><!-- #main -->
 

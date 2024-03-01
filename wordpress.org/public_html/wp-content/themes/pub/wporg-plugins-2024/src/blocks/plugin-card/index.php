@@ -20,13 +20,3 @@ add_action( 'init', __NAMESPACE__ . '\init' );
 function init() {
 	register_block_type( __DIR__ . '/../../../js/build/blocks/plugin-card' );
 }
-
-// TODO: Figure out how to add a post_class for wrapping a block...
-add_filter( 'render_block_core/post-template', function( $html, $block ) {
-	// If the post-template has the 'plugin-cards' class, add the 'plugin-card' class to the child blocks
-	if ( ! empty( $block['attrs']['className'] ) && str_contains( $block['attrs']['className'], 'plugin-cards' ) ) {
-		$html = str_replace( 'class="wp-block-post ', 'class="wp-block-post plugin-card ', $html );
-	}
-
-	return $html;
-}, 10, 2 );
