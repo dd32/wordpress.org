@@ -1,0 +1,20 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 2,
+  "name": "wporg/plugin-card",
+  "version": "0.1.0",
+  "title": "Single Plugin Card",
+  "category": "design",
+  "icon": "",
+  "description": "A block that displays the single plugin card",
+  "textdomain": "wporg",
+  "attributes": {},
+  "supports": {
+    "html": false
+  },
+  "usesContext": [
+    "postId"
+  ],
+  "editorScript": "file:./index.js",
+  "render": "file:./render.php"
+}
