@@ -6,7 +6,7 @@
  * @package wporg
  */
 
-namespace WordPressdotorg\Theme\Plugins_2024\SearchPage;
+namespace WordPressdotorg\Theme\Plugins_2024\MissingTemplateTag;
 
 add_action( 'init', __NAMESPACE__ . '\init' );
 
@@ -18,5 +18,5 @@ add_action( 'init', __NAMESPACE__ . '\init' );
  * @see https://developer.wordpress.org/reference/functions/register_block_type/
  */
 function init() {
-	register_block_type( __DIR__ . '/../../../js/build/blocks/search-page' );
+	register_block_type( __DIR__ . '/../../../js/build/blocks/missing-template-tag' );
 }

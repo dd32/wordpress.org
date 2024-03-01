@@ -1,0 +1,25 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 2,
+	"name": "wporg/missing-template-tag",
+	"version": "0.1.0",
+	"title": "Missing Template Tag",
+	"category": "design",
+	"icon": "",
+	"description": "A block that executes a missing template tag.",
+	"textdomain": "wporg",
+	"attributes": {
+		"function": {
+			"type": "string",
+			"enum": [ "the_posts_pagination", "the_archive_description" ]
+		},
+		"args": {
+			"type": "array"
+		}
+	},
+	"supports": {
+		"html": false
+	},
+	"editorScript": "file:./index.js",
+	"render": "file:./render.php"
+}

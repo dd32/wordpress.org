@@ -14,11 +14,11 @@ use WordPressdotorg\Plugin_Directory\Template;
 
 
 // Block Files
-require_once( __DIR__ . '/src/blocks/archive-page/index.php' );
 require_once( __DIR__ . '/src/blocks/filter-bar/index.php' );
 require_once( __DIR__ . '/src/blocks/front-page/index.php' );
-require_once( __DIR__ . '/src/blocks/search-page/index.php' );
 require_once( __DIR__ . '/src/blocks/single-plugin/index.php' );
+require_once( __DIR__ . '/src/blocks/plugin-card/index.php' );
+require_once( __DIR__ . '/src/blocks/missing-template-tag/index.php' );
 
 // Block Configs
 require_once( __DIR__ . '/inc/block-config.php' );
@@ -425,6 +425,7 @@ function strong_archive_title( $term ) {
 	return '<strong>' . $term . '</strong>';
 }
 add_action( 'wp_head', function() {
+	// TODO: This no longer fires, as it's rendered before `wp_head` when using blocks.
 	add_filter( 'post_type_archive_title', __NAMESPACE__ . '\strong_archive_title' );
 	add_filter( 'single_term_title', __NAMESPACE__ . '\strong_archive_title' );
 	add_filter( 'single_cat_title', __NAMESPACE__ . '\strong_archive_title' );
