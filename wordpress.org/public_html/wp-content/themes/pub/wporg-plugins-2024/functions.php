@@ -416,24 +416,6 @@ function social_meta_data() {
 add_action( 'wp_head', __NAMESPACE__ . '\social_meta_data' );
 
 /**
- * Bold archive terms are made here.
- *
- * @param string $term The archive term to bold.
- * @return string
- */
-function strong_archive_title( $term ) {
-	return '<strong>' . $term . '</strong>';
-}
-add_action( 'wp_head', function() {
-	// TODO: This no longer fires, as it's rendered before `wp_head` when using blocks.
-	add_filter( 'post_type_archive_title', __NAMESPACE__ . '\strong_archive_title' );
-	add_filter( 'single_term_title', __NAMESPACE__ . '\strong_archive_title' );
-	add_filter( 'single_cat_title', __NAMESPACE__ . '\strong_archive_title' );
-	add_filter( 'single_tag_title', __NAMESPACE__ . '\strong_archive_title' );
-	add_filter( 'get_the_date', __NAMESPACE__ . '\strong_archive_title' );
-} );
-
-/**
  * Filter the archive title to use custom string for business model.
  *
  * @param string $title Archive title to be displayed.
@@ -469,3 +451,55 @@ add_filter( 'get_the_archive_description', __NAMESPACE__ . '\update_archive_desc
  * Custom template tags for this theme.
  */
 require get_stylesheet_directory() . '/inc/template-tags.php';
+
+// TODO Maybe get_block_type_variations
+add_filter( 'register_block_type_args', function( $args ) {
+	if ( 'core/query-title' === $args['name'] ) {
+		$args['variations'] ??= [];
+		$args['variations'][] = [
+			'name'  => 'bolded',
+			'title' => 'Bolded query',
+			'attributes' => [
+				'variantType' => 'bolded',
+			],
+			'render_callback' => function( $attributes, $content, $original_render_callback) {
+				$strong_filter = function( $term ) {
+					return '<strong>' . $term . '</strong>';
+				};
+			
+				foreach ( [ 'post_type_archive_title', 'single_term_title', 'single_cat_title', 'single_tag_title', 'get_the_date' ] as $filter_name ) {
+					add_filter( $filter_name, $strong_filter );
+				}
+
+				$return = $original_render_callback( $attributes, $content );
+
+				foreach ( [ 'post_type_archive_title', 'single_term_title', 'single_cat_title', 'single_tag_title', 'get_the_date' ] as $filter_name ) {
+					remove_filter( $filter_name, $strong_filter );
+				}
+
+				return $return;
+			},
+		];
+
+		// A render callback and intercepts and re-routes the render to the individual variation render callback.
+		$render_callback         = $args['render_callback'];
+		$args['render_callback'] = function( $attributes, $content ) use( $render_callback ) {
+			$variation = $attributes['variantType'] ?? false;
+
+			if ( $variation ) {
+				$block = \WP_Block_Type_Registry::get_instance()->get_registered( 'core/query-title' );
+
+				$variations = $block->get_variations();
+				$variation  = wp_list_filter( $variations, [ 'name' => $variation ] );
+				if ( ! empty( $variation[0]['render_callback'] ) ) {
+					$callback = $variation[0]['render_callback'];
+					return $callback( $attributes, $content, $render_callback );
+				}
+			}
+
+			return $render_callback( $attributes, $content );
+		};
+	}
+
+	return $args;
+} );
