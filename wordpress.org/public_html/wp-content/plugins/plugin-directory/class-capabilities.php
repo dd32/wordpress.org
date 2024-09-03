@@ -57,7 +57,7 @@ class Capabilities {
 
 		// Plugin Committers need to have 2FA to be able to perform any of these actions.
 		if ( function_exists( 'WordPressdotorg\Two_Factor\user_requires_2fa' ) && class_exists( 'Two_Factor_Core' ) ) {
-			if ( WordPressdotorg\Two_Factor\user_requires_2fa( $user ) && ! Two_Factor_Core::is_user_using_two_factor( $user->ID ) ) {
+			if ( \WordPressdotorg\Two_Factor\user_requires_2fa( $user ) && ! \Two_Factor_Core::is_user_using_two_factor( $user->ID ) ) {
 				$required_caps[] = 'do_not_allow';
 			}
 		}
