@@ -81,13 +81,8 @@ class Plugin_Search {
 			if ( class_exists( '\Automattic\Jetpack\Search\Classic_Search' ) ) {
 				// New Jetpack
 				\Automattic\Jetpack\Search\Classic_Search::instance();
-
-			} else {
-				// Old(er) Jetpack, load the classic search module, Temporarily.
-
-				include_once WP_PLUGIN_DIR . '/jetpack/modules/search/class.jetpack-search.php';
-				include_once WP_PLUGIN_DIR . '/jetpack/modules/search/class.jetpack-search-helpers.php';
-
+			} elseif ( class_exists( 'Jetpack_Search' ) ) {
+				// Old(er) Jetpack, load the classic search module.
 				\Jetpack_Search::instance()->setup();
 			}
 

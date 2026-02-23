@@ -26,7 +26,10 @@ add_filter( 'render_block_wporg/language-suggest', __NAMESPACE__ . '\filter_lang
 function add_site_navigation_menus( $menus ) {
 	global $wp;
 
-	$url = 'https://' . $_SERVER['HTTP_HOST'] . parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH );
+	$scheme = wp_parse_url( home_url(), PHP_URL_SCHEME ) ?: 'https';
+	$host   = $_SERVER['HTTP_HOST'] ?? wp_parse_url( home_url(), PHP_URL_HOST ) ?: 'localhost';
+	$path   = ! empty( $_SERVER['REQUEST_URI'] ) ? parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH ) : '/';
+	$url    = $scheme . '://' . $host . $path;
 
 	$items = array(
 		'plugins' => array(

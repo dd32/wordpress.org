@@ -200,12 +200,8 @@ function loader_src( $src, $handle ) {
 		'wporg-plugins-faq',
 	];
 
-	if ( defined( 'WPORG_SANDBOXED' ) && WPORG_SANDBOXED ) {
-		return $src;
-	}
-
-	// Use CDN url.
-	if ( in_array( $handle, $cdn_urls, true ) ) {
+	// Use CDN url in production only.
+	if ( 'production' === wp_get_environment_type() && in_array( $handle, $cdn_urls, true ) ) {
 		$src = str_replace( get_home_url(), 'https://s.w.org', $src );
 	}
 
@@ -351,6 +347,7 @@ function social_meta_data() {
 
 	$icon   = Template::get_plugin_icon();
 	$banner = Template::get_plugin_banner();
+	$banner = is_array( $banner ) ? $banner : array();
 
 	$banner['banner']    = $banner['banner'] ?? false;
 	$banner['banner_2x'] = $banner['banner_2x'] ?? false;
