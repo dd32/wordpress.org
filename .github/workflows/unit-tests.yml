@@ -61,6 +61,10 @@ jobs:
         include:
           - name: Handbook Plugin
             plugin-directory: wordpress.org/public_html/wp-content/plugins/handbook
+            phpunit-args: "--no-configuration --bootstrap phpunit/bootstrap.php phpunit/tests/"
+          - name: Plugin Directory
+            plugin-directory: wordpress.org/public_html/wp-content/plugins/plugin-directory
+            phpunit-args: "--no-configuration --bootstrap tests/bootstrap.php tests/phpunit/tests/"
     steps:
       - uses: actions/checkout@v4
 
@@ -82,4 +86,4 @@ jobs:
 
       - name: Run PHPUnit
         working-directory: ${{ matrix.plugin-directory }}
-        run: wp-env run tests-cli --env-cwd=wp-content/plugins/$(basename ${{ matrix.plugin-directory }}) phpunit --no-configuration --bootstrap phpunit/bootstrap.php phpunit/tests/
+        run: wp-env run tests-cli --env-cwd=wp-content/plugins/$(basename ${{ matrix.plugin-directory }}) phpunit ${{ matrix.phpunit-args }}
