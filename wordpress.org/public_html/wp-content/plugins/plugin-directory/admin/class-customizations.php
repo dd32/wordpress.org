@@ -785,21 +785,15 @@ class Customizations {
 				array( __NAMESPACE__ . '\Metabox\Author_Notice', 'display' ),
 				'plugin', 'normal', 'high'
 			);
-		}
 
-		// The ElasticSearch metabox is only useful for published plugins, and on
-		// environments where Jetpack Search can actually query the index.
-		$es_environment = in_array( wp_get_environment_type(), array( 'production', 'staging' ), true );
-		$es_available   = class_exists( '\Automattic\Jetpack\Search\Classic_Search' );
-		$es_draft       = in_array( $post->post_status, array( 'draft', 'pending' ), true );
-
-		if ( ! $es_draft && ( $es_environment || $es_available ) ) {
-			add_meta_box(
-				'plugin-elasticsearch',
-				__( 'ElasticSearch Index', 'wporg-plugins' ),
-				array( __NAMESPACE__ . '\Metabox\Elasticsearch', 'display' ),
-				'plugin', 'normal', 'low'
-			);
+			if ( class_exists( '\Automattic\Jetpack\Search\Classic_Search' ) ) {
+				add_meta_box(
+					'plugin-elasticsearch',
+					__( 'ElasticSearch Index', 'wporg-plugins' ),
+					array( __NAMESPACE__ . '\Metabox\Elasticsearch', 'display' ),
+					'plugin', 'normal', 'low'
+				);
+			}
 		}
 
 		// Remove unnecessary metaboxes.
